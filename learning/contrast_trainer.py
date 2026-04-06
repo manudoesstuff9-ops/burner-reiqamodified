@@ -30,12 +30,21 @@ class ContrastTrainer(BaseTrainer):
           lr: learning rate
         """
         args = self.args
-        if args.rank == 0:
-            self.logger.log_value('loss', logs[0], epoch)
-            self.logger.log_value('acc', logs[1], epoch)
-            self.logger.log_value('jig_loss', logs[2], epoch)
-            self.logger.log_value('jig_acc', logs[3], epoch)
-            self.logger.log_value('learning_rate', lr, epoch)
+        # Only log on rank 0 in distributed mode, or always in single GPU mode
+        if hasattr(args, 'rank') and args.rank > 0:
+            return
+        if not hasattr(args, 'rank'):
+            # Single GPU mode
+            pass
+        
+        if self.logger is None:
+            return
+            
+        self.logger.log_value('loss', logs[0], epoch)
+        self.logger.log_value('acc', logs[1], epoch)
+        self.logger.log_value('jig_loss', logs[2], epoch)
+        self.logger.log_value('jig_acc', logs[3], epoch)
+        self.logger.log_value('learning_rate', lr, epoch)
 
     def wrap_up(self, model, model_ema, optimizer):
         """Wrap up models with apex and DDP
@@ -60,11 +69,17 @@ class ContrastTrainer(BaseTrainer):
                 model_ema = amp.initialize(
                     model_ema, opt_level=args.opt_level
                 )
-        # to distributed data parallel
-        model = DDP(model, device_ids=[args.gpu])
+        
+        # to distributed data parallel (only if distributed)
+        if args.distributed:
+            model = DDP(model, device_ids=[args.gpu])
 
-        if isinstance(model_ema, torch.nn.Module):
-            self.momentum_update(model.module, model_ema, 0)
+            if isinstance(model_ema, torch.nn.Module):
+                self.momentum_update(model.module, model_ema, 0)
+        else:
+            # Single GPU mode - no DDP wrapping
+            if isinstance(model_ema, torch.nn.Module):
+                self.momentum_update(model, model_ema, 0)
 
         return model, model_ema, optimizer
 
@@ -74,6 +89,10 @@ class ContrastTrainer(BaseTrainer):
         Args:
           contrast: memory.
         """
+        # Only broadcast if distributed
+        if not self.args.distributed:
+            return
+            
         if self.args.modal == 'RGB':
             dist.broadcast(contrast.memory, 0)
         else:
@@ -88,9 +107,16 @@ class ContrastTrainer(BaseTrainer):
             if os.path.isfile(args.resume):
                 checkpoint = torch.load(args.resume, map_location='cpu')
                 start_epoch = checkpoint['epoch'] + 1
-                model.load_state_dict(checkpoint['model'])
+                
+                # Handle DDP wrapped vs non-wrapped models
+                if isinstance(model, DDP):
+                    model.module.load_state_dict(checkpoint['model'])
+                else:
+                    model.load_state_dict(checkpoint['model'])
+                
                 contrast.load_state_dict(checkpoint['contrast'])
                 optimizer.load_state_dict(checkpoint['optimizer'])
+                
                 if isinstance(model_ema, torch.nn.Module):
                     model_ema.load_state_dict(checkpoint['model_ema'])
                 if args.amp:
@@ -107,27 +133,37 @@ class ContrastTrainer(BaseTrainer):
     def save(self, model, model_ema, contrast, optimizer, epoch):
         """save model to checkpoint"""
         args = self.args
-        if args.local_rank == 0:
-            # saving the model to each instance
-            print('==> Saving...')
-            state = {
-                'model': model.state_dict(),
-                'contrast': contrast.state_dict(),
-                'optimizer': optimizer.state_dict(),
-                'epoch': epoch,
-            }
-            if isinstance(model_ema, torch.nn.Module):
-                state['model_ema'] = model_ema.state_dict()
-            if args.amp:
-                state['amp'] = amp.state_dict()
-            save_file = os.path.join(args.model_folder, 'current.pth')
+        # Only save on rank 0 in distributed mode, or always in single GPU mode
+        if hasattr(args, 'local_rank') and args.local_rank > 0:
+            return
+        
+        # saving the model to each instance
+        print('==> Saving...')
+        
+        # Handle DDP wrapped models
+        if isinstance(model, DDP):
+            model_state = model.module.state_dict()
+        else:
+            model_state = model.state_dict()
+        
+        state = {
+            'model': model_state,
+            'contrast': contrast.state_dict(),
+            'optimizer': optimizer.state_dict(),
+            'epoch': epoch,
+        }
+        if isinstance(model_ema, torch.nn.Module):
+            state['model_ema'] = model_ema.state_dict()
+        if args.amp:
+            state['amp'] = amp.state_dict()
+        save_file = os.path.join(args.model_folder, 'current.pth')
+        torch.save(state, save_file)
+        if epoch % args.save_freq == 0:
+            save_file = os.path.join(
+                args.model_folder, 'ckpt_epoch_{}.pth'.format(epoch))
             torch.save(state, save_file)
-            if epoch % args.save_freq == 0:
-                save_file = os.path.join(
-                    args.model_folder, 'ckpt_epoch_{}.pth'.format(epoch))
-                torch.save(state, save_file)
-            # help release GPU memory
-            del state
+        # help release GPU memory
+        del state
 
     def train(self, epoch, train_loader, model, model_ema, contrast,
               criterion, optimizer):
@@ -149,6 +185,9 @@ class ContrastTrainer(BaseTrainer):
 
     @staticmethod
     def _global_gather(x):
+        # Check if distributed mode is enabled
+        if not dist.is_available() or not dist.is_initialized():
+            return x
         all_x = [torch.ones_like(x)
                  for _ in range(dist.get_world_size())]
         dist.all_gather(all_x, x, async_op=False)
@@ -162,6 +201,16 @@ class ContrastTrainer(BaseTrainer):
           model_ema: momentum encoder on each GPU/process
         """
         args = self.args
+        
+        # Single GPU mode - skip shuffle BN
+        if not dist.is_available() or not dist.is_initialized():
+            with torch.no_grad():
+                if args.jigsaw:
+                    k = model_ema(x, x_jig=None, mode=1)
+                else:
+                    k = model_ema(x, mode=1)
+            return k, k
+        
         local_gp = self.local_group
         bsz = x.size(0)
 
@@ -257,8 +306,17 @@ class ContrastTrainer(BaseTrainer):
             # split into two crops
             x1, x2 = torch.split(inputs, [3, 3], dim=1)
 
-            # shuffle BN for momentum encoder
-            k, all_k = self._shuffle_bn(x2, model_ema)
+            # shuffle BN for momentum encoder (skip for single GPU)
+            if args.distributed:
+                k, all_k = self._shuffle_bn(x2, model_ema)
+            else:
+                # Single GPU - no shuffle BN
+                with torch.no_grad():
+                    if args.jigsaw:
+                        k = model_ema(x2, x_jig=None, mode=1)
+                    else:
+                        k = model_ema(x2, mode=1)
+                all_k = k  # No all_gather in single GPU
 
             # loss and metrics
             if args.jigsaw:
