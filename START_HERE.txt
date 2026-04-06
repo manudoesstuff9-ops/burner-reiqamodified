@@ -1,0 +1,316 @@
+================================================================================
+🎯 THE ABSOLUTE SIMPLEST COMMAND - COPY & PASTE BELOW
+================================================================================
+
+Just pick ONE based on your operating system:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👉 FOR WINDOWS (PowerShell):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+.\MASTER_SETUP_AND_RUN.ps1
+
+INSTRUCTIONS:
+  1. Open PowerShell
+  2. Navigate to project: cd C:\path\to\burner-reiqamodified
+  3. Paste the above line
+  4. Press Enter
+  5. Wait for training to finish
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👉 FOR LINUX / MAC (Terminal/Bash):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+chmod +x MASTER_SETUP_AND_RUN.sh && ./MASTER_SETUP_AND_RUN.sh
+
+INSTRUCTIONS:
+  1. Open Terminal
+  2. Navigate to project: cd /path/to/burner-reiqamodified
+  3. Paste the above line
+  4. Press Enter
+  5. Wait for training to finish
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⏱️ WHAT HAPPENS:
+  ✓ Creates Python virtual environment
+  ✓ Installs all dependencies (PyTorch, etc.)
+  ✓ Creates all necessary folders
+  ✓ Verifies everything works
+  ✓ Creates sample CSV (you must update with your image paths)
+  ✓ Starts training
+  ✓ Saves models and logs
+
+⏱️ TOTAL TIME: 
+  First run: 10-30 minutes (installing everything)
+  Then: 8-48 hours for training (depends on GPU)
+
+⏱️ BEFORE YOU START:
+  ✓ You need Python 3.8+ (run: python --version)
+  ✓ You need image paths in csv_files/moco_train.csv
+  ✓ (Script creates sample CSV - you just need to update it)
+
+================================================================================
+VISUAL GUIDE - WHERE TO PASTE
+================================================================================
+
+WINDOWS USERS:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PowerShell                                                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  PS C:\Users\yourname> cd C:\path\to\burner-reiqamodified                   │
+│  PS C:\path\to\burner-reiqamodified> .\MASTER_SETUP_AND_RUN.ps1            │
+│  [Your command runs here...]                                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+LINUX/MAC USERS:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Terminal                                                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  $ cd /path/to/burner-reiqamodified                                         │
+│  $ chmod +x MASTER_SETUP_AND_RUN.sh && ./MASTER_SETUP_AND_RUN.sh          │
+│  [Your command runs here...]                                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+STEP-BY-STEP FOR COMPLETE BEGINNERS
+================================================================================
+
+Windows:
+
+1. Open Start Menu
+2. Type "PowerShell" and open it
+3. Type: cd C:\Users\yourname\Desktop\reiqamodified\burner-reiqamodified
+   (Replace "yourname" with your actual username)
+4. Copy this:
+   .\MASTER_SETUP_AND_RUN.ps1
+5. Right-click in PowerShell and paste it
+6. Press Enter
+7. It will start running automatically
+
+
+Linux/Mac:
+
+1. Open Terminal (Ctrl+Alt+T on Linux, Cmd+Space then type Terminal on Mac)
+2. Type: cd /path/to/burner-reiqamodified
+3. Copy these two lines together:
+   chmod +x MASTER_SETUP_AND_RUN.sh && ./MASTER_SETUP_AND_RUN.sh
+4. Right-click in Terminal and paste them
+5. Press Enter
+6. It will start running automatically
+
+================================================================================
+WHAT YOU'LL SEE WHILE IT RUNS
+================================================================================
+
+First you'll see (first time only):
+
+================================================================================
+RE-IQA COMPLETE SETUP & RUN - MASTER COMMAND
+================================================================================
+
+Project Root: /path/to/burner-reiqamodified
+Training Mode: main
+Batch Size: 128 | Epochs: 200 | Learning Rate: 0.05
+
+[STEP 1/7] Setting up Python virtual environment...
+  Creating virtual environment...
+  Activating virtual environment...
+  ✓ Virtual environment ready
+
+[STEP 2/7] Upgrading pip...
+  ✓ pip upgraded
+
+[STEP 3/7] Installing project dependencies...
+  Installing packages from requirements.txt...
+  ✓ All dependencies installed
+
+[STEP 4/7] Verifying installation...
+  Python version: 3.10.5
+  PyTorch version: 2.0.1
+  CUDA available: True
+  GPU device: NVIDIA A100
+  TorchVision: 0.15.2
+  NumPy: 1.24.3
+  ✓ All critical packages verified
+
+[STEP 5/7] Creating directory structure...
+  ✓ Created: save_dir
+  ✓ Created: save_dir/checkpoints
+  ✓ Created: tb_logger
+  ✓ Created: csv_files
+  ✓ Created: data
+  ✓ Created: data/train
+  ✓ Created: data/val
+  ✓ Created: features
+  ✓ Created: features/content
+  ✓ Created: features/quality
+  ✓ Created: logs
+
+[STEP 6/7] Checking CSV files...
+  CSV file exists: csv_files/moco_train.csv
+  ✓ CSV file exists: csv_files/moco_train.csv
+
+[STEP 7/7] Starting training pipeline...
+────────────────────────────────────────────────────────────────────────────────
+TRAINING CONFIGURATION:
+  Batch Size: 128
+  Epochs: 200
+  Learning Rate: 0.05
+  Optimizer: SGD
+  Architecture: resnet50
+  Feature Dimension: 256
+  Workers: 4
+────────────────────────────────────────────────────────────────────────────────
+
+Running: main_contrast.py (Original Re-IQA)
+[2024-04-06 10:15:23,123] [main_contrast.py] [INFO] Starting training with 4 GPUs
+Epoch [1/200], loss: 5.234, top1: 0.45
+Epoch [2/200], loss: 4.982, top1: 0.52
+Epoch [3/200], loss: 4.756, top1: 0.58
+... (continues for 200 epochs)
+
+Then after training completes:
+
+================================================================================
+✓ TRAINING COMPLETED SUCCESSFULLY!
+================================================================================
+
+Output locations:
+  Models: ./save_dir/
+  Logs: ./tb_logger/
+
+To view TensorBoard:
+  tensorboard --logdir=./tb_logger
+  Then open: http://localhost:6006
+
+================================================================================
+
+Once you see this, training is DONE! ✓
+
+================================================================================
+IF SOMETHING GOES WRONG
+================================================================================
+
+Most common issues and solutions:
+
+1. "Module not found" error
+   → Delete .venv folder
+   → Delete __pycache__ folder
+   → Run the command again
+
+2. "CUDA out of memory"
+   → Edit MASTER_SETUP_AND_RUN.ps1 or MASTER_SETUP_AND_RUN.sh
+   → Find: $BATCH_SIZE = 128 or BATCH_SIZE=128
+   → Change to: $BATCH_SIZE = 64 or BATCH_SIZE=64
+   → Run again
+
+3. "CSV file not found"
+   → The script creates a sample CSV
+   → Update it with your actual image paths
+
+4. "Permission denied" (Linux/Mac)
+   → Make sure you ran: chmod +x MASTER_SETUP_AND_RUN.sh
+   → This makes the script executable
+
+5. "Execution policy" (Windows PowerShell)
+   → Run this first:
+     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   → Then run the script
+
+6. "Python not found"
+   → Install Python from python.org
+   → Make sure to check "Add Python to PATH" during installation
+   → Restart PowerShell/Terminal
+
+For more detailed help, see:
+  COMPLETE_MASTER_SETUP_GUIDE.txt
+
+================================================================================
+CUSTOMIZE THE TRAINING (OPTIONAL)
+================================================================================
+
+To change training parameters, edit the master script:
+
+WINDOWS:
+  Open: MASTER_SETUP_AND_RUN.ps1
+  Change these values (near the top):
+    $BATCH_SIZE = 128          → Change to 64 for less memory
+    $EPOCHS = 200              → Change to 50 for quick test
+    $LEARNING_RATE = 0.05      → Change to 0.01 or 0.1
+    $NUM_WORKERS = 4           → Change to match CPU cores
+    $TRAINING_MODE = "main"    → Change to "mde" for variant
+
+LINUX/MAC:
+  Open: MASTER_SETUP_AND_RUN.sh
+  Change these values (near the top):
+    BATCH_SIZE=128             → Change to 64 for less memory
+    EPOCHS=200                 → Change to 50 for quick test
+    LEARNING_RATE=0.05         → Change to 0.01 or 0.1
+    NUM_WORKERS=4              → Change to match CPU cores
+    TRAINING_MODE="main"       → Change to "mde" for variant
+
+Then save and run the script again.
+
+================================================================================
+AFTER TRAINING COMPLETES
+================================================================================
+
+Your trained models are saved in: ./save_dir/
+
+Next steps:
+
+1. Extract quality-aware features:
+   python demo_quality_aware_feats.py \
+     --model_path ./save_dir/best_model.pth \
+     --csv_path ./csv_files/moco_train.csv
+
+2. Extract content-aware features:
+   python demo_content_aware_feats.py \
+     --model_path ./save_dir/best_model.pth \
+     --csv_path ./csv_files/moco_train.csv
+
+3. Use features for your downstream task:
+   - Image quality assessment
+   - Image classification
+   - Similarity search
+   - Anomaly detection
+   - etc.
+
+================================================================================
+OTHER MASTER FILES YOU HAVE
+================================================================================
+
+📖 COMPLETE_MASTER_SETUP_GUIDE.txt
+   Complete guide with all options and troubleshooting
+
+📋 MASTER_FILES_REFERENCE.txt
+   Index of all master files and what they do
+
+📋 QUICK_START.txt
+   Ultra-quick 30-second overview
+
+📊 VISUAL_SETUP_FLOWCHART.txt
+   Detailed technical flowchart and explanations
+
+📋 MASTER_COMMAND_COPY_PASTE.txt
+   All command variants for different scenarios
+
+================================================================================
+BOTTOM LINE
+================================================================================
+
+THIS IS ALL YOU NEED TO DO:
+
+Windows:   .\MASTER_SETUP_AND_RUN.ps1
+Linux/Mac: chmod +x MASTER_SETUP_AND_RUN.sh && ./MASTER_SETUP_AND_RUN.sh
+
+Copy one line above, paste it in your terminal, press Enter, and wait.
+
+Everything else happens automatically on any machine.
+
+Good luck! 🚀
+
+================================================================================

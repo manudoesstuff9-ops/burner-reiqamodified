@@ -1,0 +1,206 @@
+================================================================================
+RE-IQA MASTER COMMAND - COPY & PASTE VERSIONS
+================================================================================
+
+Choose the version that fits your needs:
+
+================================================================================
+FOR WINDOWS (PowerShell) - OPTION 1: SIMPLEST ONE-LINER
+================================================================================
+
+This is the absolute shortest command - copy entire line and paste in PowerShell:
+
+python -m venv .venv; .\.venv\Scripts\Activate.ps1; python -m pip install -q -r requirements.txt; New-Item -ItemType Directory -Force -Path "save_dir","tb_logger","csv_files","data\train","data\val" | Out-Null; python main_contrast.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+================================================================================
+FOR WINDOWS (PowerShell) - OPTION 2: EASIEST (USES MASTER SCRIPT)
+================================================================================
+
+Just run this ONE line in PowerShell (from project directory):
+
+.\MASTER_SETUP_AND_RUN.ps1
+
+That's it! It will do EVERYTHING: setup venv, install packages, create directories, verify setup, and run training.
+
+If you get execution policy error, first run:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+================================================================================
+FOR LINUX/MAC - OPTION 1: SIMPLEST ONE-LINER
+================================================================================
+
+python3 -m venv .venv && source .venv/bin/activate && python -m pip install -q -r requirements.txt && mkdir -p save_dir tb_logger csv_files data/train data/val && python main_contrast.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+================================================================================
+FOR LINUX/MAC - OPTION 2: EASIEST (USES MASTER SCRIPT)
+================================================================================
+
+Just run this ONE line in Terminal (from project directory):
+
+chmod +x MASTER_SETUP_AND_RUN.sh && ./MASTER_SETUP_AND_RUN.sh
+
+That's it! It will do EVERYTHING: setup venv, install packages, create directories, verify setup, and run training.
+
+================================================================================
+FOR MULTI-DISTORTION ENCODER (MDE) VARIANT - WINDOWS
+================================================================================
+
+python -m venv .venv; .\.venv\Scripts\Activate.ps1; python -m pip install -q -r requirements.txt; New-Item -ItemType Directory -Force -Path "save_dir","tb_logger","csv_files","data\train","data\val" | Out-Null; python main_contrast_mde.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+================================================================================
+FOR MULTI-DISTORTION ENCODER (MDE) VARIANT - LINUX/MAC
+================================================================================
+
+python3 -m venv .venv && source .venv/bin/activate && python -m pip install -q -r requirements.txt && mkdir -p save_dir tb_logger csv_files data/train data/val && python main_contrast_mde.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+================================================================================
+WHAT EACH COMMAND DOES
+================================================================================
+
+1. python -m venv .venv
+   → Creates virtual environment in .venv folder
+
+2. Activate command (.\.venv\Scripts\Activate.ps1 on Windows / source .venv/bin/activate on Linux)
+   → Activates the virtual environment
+
+3. python -m pip install -q -r requirements.txt
+   → Silently installs all dependencies (PyTorch, numpy, scipy, etc.)
+
+4. New-Item -ItemType Directory / mkdir -p
+   → Creates all needed directories (save_dir, tb_logger, csv_files, data folders)
+
+5. python main_contrast.py / python main_contrast_mde.py
+   → Starts training with specified parameters:
+      --batch_size 128         : Training batch size
+      --epochs 200             : Total training epochs
+      --learning_rate 0.05     : Initial learning rate
+      --optimizer SGD          : Optimizer algorithm
+      --arch resnet50          : Neural network architecture
+      --feat_dim 256           : Feature dimension size
+      --cosine                 : Use cosine annealing schedule
+      --warm                   : Use warmup
+      --head linear            : Head type
+      --num_workers 4          : Data loading workers
+      --model_path ./save_dir  : Where to save models
+      --tb_path ./tb_logger    : TensorBoard logs location
+      --csv_path ./csv_files/moco_train.csv : Image path CSV
+      --multiprocessing_distributed : Enable multi-GPU
+
+================================================================================
+BEFORE RUNNING - IMPORTANT PREREQUISITES
+================================================================================
+
+✓ You must have Python 3.8+ installed
+✓ CSV file required at: csv_files/moco_train.csv
+  (Contains paths to your training images)
+✓ Training images should exist (or update --csv_path)
+✓ At least 8GB RAM (16GB+ for training)
+
+Run once to verify Python:
+  python --version
+
+If you don't have a CSV yet, the script will create a sample one and ask you to update it.
+
+================================================================================
+CUSTOMIZATION - ADJUST THESE PARAMETERS
+================================================================================
+
+Want to change settings? Edit these in the command:
+
+Batch Size:         Change 128 to something else (e.g., 64, 256)
+Epochs:             Change 200 to desired epochs
+Learning Rate:      Change 0.05 to your preferred LR (e.g., 0.01, 0.1)
+Number of Workers:  Change 4 to number of CPU cores available
+Training Mode:      Use main_contrast.py OR main_contrast_mde.py
+GPU/CPU:            Already auto-detected; uses GPU if available
+
+Example with different settings:
+python main_contrast.py \
+  --batch_size 64 \
+  --epochs 100 \
+  --learning_rate 0.01 \
+  --num_workers 8 \
+  --model_path ./save_dir \
+  --tb_path ./tb_logger \
+  --csv_path ./csv_files/moco_train.csv \
+  --multiprocessing_distributed
+
+================================================================================
+MONITORING TRAINING
+================================================================================
+
+While training is running (in another terminal), view progress with:
+
+Windows:
+  .\.venv\Scripts\Activate.ps1
+  tensorboard --logdir=./tb_logger
+  Then open: http://localhost:6006
+
+Linux/Mac:
+  source .venv/bin/activate
+  tensorboard --logdir=./tb_logger
+  Then open: http://localhost:6006
+
+================================================================================
+AFTER TRAINING COMPLETES
+================================================================================
+
+Models saved to:     ./save_dir/
+TensorBoard logs:    ./tb_logger/
+Checkpoints:         ./save_dir/checkpoints/
+
+Extract quality features:
+  python demo_quality_aware_feats.py --model_path ./save_dir/[best_model].pth
+
+Extract content features:
+  python demo_content_aware_feats.py --model_path ./save_dir/[best_model].pth
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+ERROR: "ModuleNotFoundError: No module named 'torch'"
+→ Virtual environment not activated or pip install failed
+→ Solution: Delete .venv folder and run script again
+
+ERROR: "CUDA out of memory"
+→ Reduce batch size: change --batch_size 128 to --batch_size 64
+→ Or reduce num_workers: change --num_workers 4 to --num_workers 2
+
+ERROR: "No such file: csv_files/moco_train.csv"
+→ Create the CSV file with your image paths
+→ Format: one image path per line
+→ Example:
+  /path/to/image1.jpg
+  /path/to/image2.jpg
+  /path/to/image3.jpg
+
+ERROR: "FileNotFoundError: data/..." 
+→ Your images don't exist at the paths in CSV
+→ Update CSV file with correct image paths
+→ Or put your images in the data folder and update CSV accordingly
+
+ERROR: "RuntimeError: cuDNN version mismatch"
+→ Usually temporary; try reinstalling torch:
+→ Solution: pip install --upgrade --force-reinstall torch torchvision
+
+For more detailed help, see:
+  - SETUP_AND_RUN_INSTRUCTIONS.txt
+  - README.MD
+  - SETUP_VERIFICATION_AND_INITIALIZATION.txt
+
+================================================================================
+QUICK START CHECKLIST
+================================================================================
+
+□ Navigate to project directory
+□ Have Python 3.8+ installed (python --version)
+□ Prepare CSV with image paths (csv_files/moco_train.csv)
+□ Have training images available
+□ Run the command from above (copy and paste entire line)
+□ Monitor training with TensorBoard
+□ Wait for training to complete
+□ Extract features from saved models
+□ Done!
+
+================================================================================

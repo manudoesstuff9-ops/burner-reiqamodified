@@ -1,0 +1,347 @@
+================================================================================
+RE-IQA - VISUAL SETUP FLOW
+================================================================================
+
+START HERE ↓
+
+                    ⚡ DO YOU HAVE PYTHON 3.8+? ⚡
+                              |
+                    ┌─────────┴─────────┐
+                    |                   |
+                   YES                 NO  
+                    |                   |
+                    |          → Download python.org
+                    |          → Install & restart
+                    |          → Return here
+                    |
+                    ↓
+                ⚡ SELECT YOUR OS ⚡
+                    |
+        ┌───────────┼───────────┐
+        |           |           |
+      WINDOWS     LINUX        MAC
+        |           |           |
+        ↓           ↓           ↓
+    PowerShell   Terminal    Terminal
+        |           |           |
+        ↓           ↓           ↓
+   Copy this:   Copy this:   Copy this:
+   
+   .\MASTER_   chmod +x     chmod +x
+   SETUP_AND_  MASTER_      MASTER_
+   RUN.ps1     SETUP_AND_   SETUP_AND_
+               RUN.sh       RUN.sh
+               ./MASTER_    ./MASTER_
+               SETUP_AND_   SETUP_AND_
+               RUN.sh       RUN.sh
+        |           |           |
+        └───────────┼───────────┘
+                    |
+                    ↓
+            🔄 SCRIPT EXECUTES 🔄
+                    |
+      ┌─────────────┼─────────────┐
+      |             |             |
+      ↓             ↓             ↓
+   Creates      Installs      Creates
+   Virtual    Dependencies    Folders
+   Env         & Verifies     (auto)
+      |             |             |
+      └─────────────┼─────────────┘
+                    |
+                    ↓
+        ✓ SETUP COMPLETE ✓
+                    |
+                    ↓
+        🚀 TRAINING STARTS 🚀
+                    |
+      ┌─────────────┼─────────────┐
+      |             |             |
+      ↓             ↓             ↓
+   Training    Saving       TensorBoard
+   Epochs      Checkpoints  (Optional)
+   (200x)      (auto)       (http://localhost:6006)
+      |             |             |
+      └─────────────┼─────────────┘
+                    |
+                    ↓
+            ⏳ WAIT FOR FINISH ⏳
+             (Hours/Days depending on GPU)
+                    |
+                    ↓
+        ✅ MODELS SAVED ✅
+                    |
+      ┌─────────────┼─────────────┐
+      |             |             |
+      ↓             ↓             ↓
+   Models       Logs       Features
+   ./save_dir   ./tb_logger  (Extract)
+      |             |             |
+      └─────────────┼─────────────┘
+                    |
+                    ↓
+            🎉 PROJECT COMPLETE 🎉
+
+================================================================================
+WHAT EACH AUTOMATED STEP DOES
+================================================================================
+
+Step 1: Virtual Environment
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Creates isolated Python environment (.venv folder)                          │
+│ • Keeps project dependencies separate from system Python                    │
+│ • Prevents conflicts between different projects                             │
+│ • Already exists? Just activates it                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Step 2: Install Dependencies
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Installs all required packages from requirements.txt:                       │
+│ • PyTorch (deep learning framework)                                         │
+│ • TorchVision (computer vision tools)                                       │
+│ • NumPy, SciPy (numerical computing)                                        │
+│ • TensorBoard (visualization)                                               │
+│ • All other dependencies                                                    │
+│ Automatic detection: If GPU/CUDA available, uses GPU version                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Step 3: Create Directories
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Creates folder structure:                                                   │
+│ save_dir/          ← Trained models go here                                 │
+│ tb_logger/         ← TensorBoard logs for visualization                     │
+│ csv_files/         ← Image path CSV files                                   │
+│ data/train/        ← Training images (if you have them)                     │
+│ data/val/          ← Validation images (optional)                           │
+│ features/          ← Extracted features output                              │
+│ logs/              ← Training logs                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Step 4: Verify Installation
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Checks if everything is working:                                            │
+│ • Python version                                                            │
+│ • PyTorch installed and working                                             │
+│ • GPU/CUDA availability                                                     │
+│ • All critical packages importable                                          │
+│ Shows you exactly what you're running on                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Step 5: Prepare CSV
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Checks for image list CSV file:                                            │
+│ • If exists: Proceeds with training                                         │
+│ • If missing: Creates sample template                                       │
+│   YOU MUST UPDATE: Replace sample paths with your image paths               │
+│   Format: one image path per line                                           │
+│ Examples:                                                                   │
+│   /absolute/path/to/image1.jpg                                             │
+│   /absolute/path/to/image2.jpg                                             │
+│   C:\Users\username\images\image3.jpg (Windows)                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Step 6: Start Training
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Launches main training pipeline:                                            │
+│ • Loads images from CSV paths                                               │
+│ • Initializes neural network (ResNet50)                                     │
+│ • Begins contrastive learning (MoCo)                                        │
+│ • Saves checkpoints every N epochs                                          │
+│ • Logs metrics to TensorBoard                                               │
+│ • Continues until 200 epochs complete (configurable)                        │
+│ You can stop anytime with Ctrl+C                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+PARAMETER EXPLANATIONS
+================================================================================
+
+--batch_size 128
+  How many images to process together
+  Higher = faster training but needs more GPU memory
+  Try 64 if you run out of memory
+
+--epochs 200
+  How many times to go through the entire dataset
+  Higher = longer training but potentially better models
+  200 is good starting point
+
+--learning_rate 0.05
+  How much to adjust weights each step
+  Too high = training unstable
+  Too low = training very slow
+  0.05 is safe default
+
+--num_workers 4
+  How many CPU threads load data
+  Set to number of CPU cores for best speed
+  Try 2 if you have issues
+
+--optimizer SGD
+  Algorithm to update weights
+  SGD = Stochastic Gradient Descent (stable)
+  Alternative: Adam, LARS, etc.
+
+--arch resnet50
+  Which neural network architecture
+  resnet50 = ResNet with 50 layers (good balance)
+  Alternatives: resnet18 (faster), resnet152 (slower/better)
+
+--feat_dim 256
+  Dimension of output feature vector
+  256-dimensional vectors capture image info
+  Higher = more expressive but slower
+
+--cosine
+  Use cosine annealing for learning rate
+  Gradually reduces learning rate during training
+  Helps with convergence
+
+--warm
+  Use warmup period
+  Start with low learning rate, gradually increase
+  Helps stabilize early training
+
+--head linear
+  Type of projection head
+  linear = single linear layer
+  Alternative: mlp (multi-layer perceptron)
+
+--multiprocessing_distributed
+  Use multiple GPUs if available
+  Single GPU: still works fine
+  Multiple GPUs: scales linearly
+
+================================================================================
+AFTER TRAINING - WHAT TO DO WITH RESULTS
+================================================================================
+
+Extracted Feature Files:
+├── ./save_dir/
+│   ├── latest.pth          ← Latest checkpoint
+│   ├── best_model.pth      ← Best model (lowest loss)
+│   ├── model_0050.pth      ← Checkpoint at epoch 50
+│   ├── model_0100.pth      ← Checkpoint at epoch 100
+│   ├── model_0200.pth      ← Final checkpoint
+│   └── checkpoints/
+│
+└── ./tb_logger/
+    └── events.out.tfevents... ← TensorBoard data
+
+Option 1: Extract Quality-Aware Features
+  python demo_quality_aware_feats.py \
+    --model_path ./save_dir/best_model.pth \
+    --csv_path ./csv_files/moco_train.csv \
+    --output_path ./features/quality
+
+Option 2: Extract Content-Aware Features
+  python demo_content_aware_feats.py \
+    --model_path ./save_dir/best_model.pth \
+    --csv_path ./csv_files/moco_train.csv \
+    --output_path ./features/content
+
+Option 3: Combine and use for downstream tasks
+  • Image quality assessment
+  • Image classification
+  • Similarity search
+  • Anomaly detection
+
+================================================================================
+SUCCESS INDICATORS - YOU'LL SEE:
+================================================================================
+
+✓ Virtual environment created
+✓ Dependencies installed
+✓ Directories created
+✓ Installation verified
+✓ CSV file ready
+→ Starting training
+→ Epoch 1/200 ... loss: 5.234
+→ Epoch 2/200 ... loss: 4.982
+→ Epoch 3/200 ... loss: 4.756
+... (continues)
+→ Checkpoint saved: ./save_dir/model_0010.pth
+... (continues)
+→ Training complete!
+✓ Models saved to ./save_dir/
+✓ TensorBoard logs to ./tb_logger/
+→ Ready to extract features
+
+================================================================================
+ERROR HANDLING - WHAT IF SOMETHING GOES WRONG?
+================================================================================
+
+The master scripts are designed to be robust:
+
+IF creating venv fails:
+  → Retry with internet connection
+  → Check disk space (need ~2GB free)
+
+IF pip install fails:
+  → Retries automatically with --no-cache-dir
+  → May need to wait and retry (PyPI servers sometimes slow)
+
+IF CUDA not detected on GPU machine:
+  → Script suggests installing GPU-specific PyTorch
+  → Falls back to CPU mode automatically
+  → Will still work, just slower
+
+IF image CSV missing:
+  → Script creates sample template automatically
+  → Tells you to update it with real paths
+  → Won't start training until fixed
+
+IF images not found during training:
+  → Training fails with clear error message
+  → Fix CSV paths and restart
+
+IF training fills all GPU memory:
+  → Restart with smaller batch_size
+  → Reduce num_workers
+
+IF training interrupted:
+  → Stop with Ctrl+C
+  → Can resume from checkpoint with --resume flag
+  → Or restart from scratch
+
+MANUAL RECOVERY:
+  1. Check what went wrong (read error message)
+  2. Fix the issue (update CSV, free GPU memory, etc.)
+  3. Delete .venv folder: rm -rf .venv
+  4. Re-run the master script
+  5. Everything reinstalls cleanly
+
+================================================================================
+EXPECTED RUNTIME
+================================================================================
+
+On NVIDIA GPU (A100, RTX 4090):    8-12 hours for 200 epochs
+On NVIDIA GPU (RTX 3080, A6000):  12-24 hours for 200 epochs
+On older NVIDIA GPU (RTX 2080):   24-48 hours for 200 epochs
+On CPU only:                      Several days (not recommended)
+
+You can reduce epochs to shorten training:
+  Change --epochs 200 to --epochs 50 for quick test
+  Then switch to --epochs 200 for final training
+
+================================================================================
+BOTTOM LINE
+================================================================================
+
+THREE WAYS TO RUN:
+
+1. EASIEST:  Just run the master script
+   Windows:  .\MASTER_SETUP_AND_RUN.ps1
+   Linux/Mac: ./MASTER_SETUP_AND_RUN.sh
+
+2. QUICK:    Copy the one-liner command
+   See: MASTER_COMMAND_COPY_PASTE.txt
+
+3. MANUAL:   Step by step if something breaks
+   See: COMPLETE_MASTER_SETUP_GUIDE.txt
+
+All three methods do EXACTLY the same thing - just different ways to execute it.
+
+Pick one and copy-paste. That's all you need to do!
+
+================================================================================

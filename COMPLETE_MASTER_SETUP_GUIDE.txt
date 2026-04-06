@@ -1,0 +1,272 @@
+================================================================================
+RE-IQA MASTER SETUP - COMPLETE GUIDE - START HERE!
+================================================================================
+
+This document explains the THREE WAYS to run the entire project on any machine.
+
+================================================================================
+WHAT YOU NEED (PREREQUISITES)
+================================================================================
+
+1. Python 3.8 or higher
+   Check: python --version
+   If missing: Download from python.org
+
+2. Images for training
+   Create a CSV file listing your image paths
+
+3. That's it! Everything else is automatic.
+
+================================================================================
+METHOD 1: EASIEST FOR EVERYONE (RECOMMENDED) ⭐⭐⭐
+================================================================================
+
+WINDOWS (PowerShell):
+  1. Open PowerShell
+  2. Navigate to project folder: cd C:\path\to\burner-reiqamodified
+  3. Copy and paste this one line:
+     
+     .\MASTER_SETUP_AND_RUN.ps1
+  
+  4. Press Enter and wait for training to finish!
+
+LINUX / MAC (Terminal):
+  1. Open Terminal
+  2. Navigate to project folder: cd /path/to/burner-reiqamodified
+  3. Copy and paste these two lines:
+     
+     chmod +x MASTER_SETUP_AND_RUN.sh
+     ./MASTER_SETUP_AND_RUN.sh
+  
+  4. Press Enter and wait for training to finish!
+
+What it does:
+  ✓ Creates Python virtual environment
+  ✓ Installs all dependencies (automated)
+  ✓ Creates all required folders
+  ✓ Verifies everything works
+  ✓ Starts training
+  ✓ Saves models and logs
+
+Benefits:
+  ✓ Works on ANY machine
+  ✓ No configuration needed
+  ✓ Handles all errors automatically
+  ✓ Colorful output showing progress
+
+================================================================================
+METHOD 2: ULTRA-SHORT ONE-LINER (If you want to copy-paste code)
+================================================================================
+
+WINDOWS PowerShell:
+
+python -m venv .venv; .\.venv\Scripts\Activate.ps1; python -m pip install -q -r requirements.txt; New-Item -ItemType Directory -Force -Path "save_dir","tb_logger","csv_files","data\train","data\val" | Out-Null; python main_contrast.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+
+LINUX / MAC Terminal:
+
+python3 -m venv .venv && source .venv/bin/activate && python -m pip install -q -r requirements.txt && mkdir -p save_dir tb_logger csv_files data/train data/val && python main_contrast.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+Just copy the entire line, paste it, press Enter, and wait!
+
+================================================================================
+METHOD 3: STEP-BY-STEP MANUAL (If something goes wrong)
+================================================================================
+
+WINDOWS PowerShell:
+
+# Step 1: Create virtual environment
+python -m venv .venv
+
+# Step 2: Activate it
+.\.venv\Scripts\Activate.ps1
+
+# Step 3: Install dependencies
+python -m pip install -q -r requirements.txt
+
+# Step 4: Verify installation
+python -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA: {torch.cuda.is_available()}')"
+
+# Step 5: Create folders
+New-Item -ItemType Directory -Force -Path "save_dir","tb_logger","csv_files","data\train","data\val" | Out-Null
+
+# Step 6: Start training
+python main_contrast.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+
+LINUX / MAC Terminal:
+
+# Step 1: Create virtual environment
+python3 -m venv .venv
+
+# Step 2: Activate it
+source .venv/bin/activate
+
+# Step 3: Install dependencies
+python -m pip install -q -r requirements.txt
+
+# Step 4: Verify installation
+python -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA: {torch.cuda.is_available()}')"
+
+# Step 5: Create folders
+mkdir -p save_dir tb_logger csv_files data/train data/val
+
+# Step 6: Start training
+python main_contrast.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+Run each step one at a time and check for errors.
+
+================================================================================
+REQUIRED: PREPARE CSV FILE
+================================================================================
+
+Before training starts, you MUST have a CSV file at:
+  csv_files/moco_train.csv
+
+Format (one image path per line):
+  /path/to/image1.jpg
+  /path/to/image2.jpg
+  /path/to/image3.jpg
+  /path/to/image4.jpg
+
+The scripts will create a SAMPLE CSV for you, but you need to update it with
+your actual image paths.
+
+Example CSV creation (Windows PowerShell):
+  @'
+  /Users/yourname/images/image1.jpg
+  /Users/yourname/images/image2.jpg
+  /Users/yourname/images/image3.jpg
+  '@ | Out-File -Encoding UTF8 csv_files/moco_train.csv
+
+Example CSV creation (Linux/Mac):
+  cat > csv_files/moco_train.csv << EOF
+  /home/yourname/images/image1.jpg
+  /home/yourname/images/image2.jpg
+  /home/yourname/images/image3.jpg
+  EOF
+
+================================================================================
+CUSTOMIZE THE TRAINING (OPTIONAL)
+================================================================================
+
+You can modify these parameters in any of the commands above:
+
+--batch_size 128        → Change 128 to your preferred batch size (e.g., 64, 256)
+--epochs 200             → Change 200 to number of training epochs
+--learning_rate 0.05     → Change 0.05 to your learning rate (e.g., 0.01, 0.1)
+--num_workers 4          → Change 4 to number of CPU cores
+--model_path ./save_dir  → Where models are saved
+--csv_path ./csv_files/moco_train.csv → Path to your image CSV
+
+Example: Train for 100 epochs with batch size 64:
+(Replace the corresponding parts in the training command above)
+
+================================================================================
+DURING TRAINING - MONITOR PROGRESS
+================================================================================
+
+Training will take several hours (depending on your GPU/CPU and dataset size).
+
+To see training progress in real-time:
+
+Open a NEW terminal/PowerShell window in the same project directory:
+
+WINDOWS:
+  .\.venv\Scripts\Activate.ps1
+  tensorboard --logdir=./tb_logger
+
+LINUX/MAC:
+  source .venv/bin/activate
+  tensorboard --logdir=./tb_logger
+
+Then open your browser and go to:
+  http://localhost:6006
+
+You'll see live graphs of losses and metrics!
+
+================================================================================
+AFTER TRAINING COMPLETES ✓
+================================================================================
+
+When training finishes, you'll have:
+
+Models:          ./save_dir/ (contains trained weights)
+Logs:            ./tb_logger/ (TensorBoard event files)
+Checkpoints:     ./save_dir/checkpoints/
+
+Next steps:
+
+1. Extract quality-aware features:
+   python demo_quality_aware_feats.py --model_path ./save_dir/best_model.pth
+
+2. Extract content-aware features:
+   python demo_content_aware_feats.py --model_path ./save_dir/best_model.pth
+
+3. Use these features for downstream tasks:
+   - Image Quality Assessment
+   - Distortion detection
+   - Feature visualization
+   - etc.
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+PROBLEM: "No module named 'torch'"
+SOLUTION: 
+  - Delete .venv folder: rm -rf .venv (or del /s .venv on Windows)
+  - Re-run the setup script
+
+PROBLEM: "CUDA out of memory"
+SOLUTION:
+  - Reduce batch size: --batch_size 64 or --batch_size 32
+  - Reduce workers: --num_workers 2
+
+PROBLEM: "CSV file not found"
+SOLUTION:
+  - Create csv_files folder: mkdir csv_files
+  - Create CSV with your image paths
+  - Script will create a sample CSV for you
+
+PROBLEM: "Image files not found"
+SOLUTION:
+  - Check image paths in your CSV file are correct
+  - Use absolute paths (full path, not relative)
+
+PROBLEM: "Python version error"
+SOLUTION:
+  - Make sure Python 3.8+ is installed
+  - Check: python --version
+  - If wrong version, specify python3.8 or python3.9 in commands
+
+PROBLEM: PowerShell execution policy error
+SOLUTION:
+  Run: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+  Then try running the script again
+
+For more help, see:
+  - MASTER_COMMAND_COPY_PASTE.txt (detailed command explanations)
+  - SETUP_AND_RUN_INSTRUCTIONS.txt (original setup guide)
+  - README.MD (project overview)
+
+================================================================================
+ONE-COMMAND SUMMARY
+================================================================================
+
+WINDOWS:           .\MASTER_SETUP_AND_RUN.ps1
+LINUX/MAC:         chmod +x MASTER_SETUP_AND_RUN.sh && ./MASTER_SETUP_AND_RUN.sh
+
+Choose one, copy it, paste it, press Enter. Done!
+
+The entire project will:
+1. Set up environment ✓
+2. Install all dependencies ✓
+3. Create folders ✓
+4. Verify setup ✓
+5. Start training ✓
+6. Save results ✓
+
+No configuration needed. Works on any machine.
+
+================================================================================

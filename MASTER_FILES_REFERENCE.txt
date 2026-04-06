@@ -1,0 +1,430 @@
+================================================================================
+📋 RE-IQA MASTER SETUP - COMPLETE FILE REFERENCE
+================================================================================
+
+I've created FIVE comprehensive master setup documents for you.
+Choose the one that fits your needs best:
+
+================================================================================
+1. 🚀 QUICKEST START (READ THIS FIRST)
+================================================================================
+
+File: QUICK_START.txt
+
+Contains: The fastest way to get running
+Best for: Everyone - just 2-3 lines to copy and paste
+Time to read: 30 seconds
+
+✓ Windows one-liner
+✓ Linux/Mac one-liner
+✓ No fluff, just the essentials
+
+📍 Start here if you just want to run it now!
+
+================================================================================
+2. 📖 COMPLETE VISUAL GUIDE
+================================================================================
+
+File: COMPLETE_MASTER_SETUP_GUIDE.txt
+
+Contains: Everything you need to know
+Best for: Understanding the whole process
+Includes:
+  ✓ Three methods to run (easy, one-liner, manual)
+  ✓ Step-by-step instructions
+  ✓ How to prepare CSV files
+  ✓ Customization options
+  ✓ Monitoring training
+  ✓ Troubleshooting guide
+  ✓ Post-training steps
+
+📍 Read this if you want to understand what's happening!
+
+================================================================================
+3. 🎯 ALL COPY-PASTE COMMANDS
+================================================================================
+
+File: MASTER_COMMAND_COPY_PASTE.txt
+
+Contains: Every possible command variant
+Best for: Choosing different training options
+Includes:
+  ✓ Windows PowerShell one-liner
+  ✓ Linux/Mac one-liner
+  ✓ Multi-Distortion Encoder (MDE) variant
+  ✓ Parameter explanations
+  ✓ Command breakdown
+  ✓ Troubleshooting
+
+📍 Use this if you need a specific variant or want detailed explanations!
+
+================================================================================
+4. 🔧 AUTOMATED SCRIPT - WINDOWS
+================================================================================
+
+File: MASTER_SETUP_AND_RUN.ps1
+
+Contains: Complete PowerShell script that does everything
+Best for: Windows users who want automation
+Features:
+  ✓ Creates virtual environment (if needed)
+  ✓ Installs all dependencies
+  ✓ Verifies installation
+  ✓ Creates directories
+  ✓ Prepares CSV
+  ✓ Starts training
+  ✓ Progress indicators and colors
+  ✓ Error handling
+
+Usage:
+  .\MASTER_SETUP_AND_RUN.ps1
+
+If you get execution policy error, first run:
+  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+📍 Best for Windows users who want everything automated!
+
+================================================================================
+5. 🔧 AUTOMATED SCRIPT - LINUX/MAC
+================================================================================
+
+File: MASTER_SETUP_AND_RUN.sh
+
+Contains: Complete Bash script that does everything
+Best for: Linux and macOS users who want automation
+Features:
+  ✓ Creates virtual environment (if needed)
+  ✓ Installs all dependencies
+  ✓ Verifies installation
+  ✓ Creates directories
+  ✓ Prepares CSV
+  ✓ Starts training
+  ✓ Colored output and progress
+  ✓ Error handling
+
+Usage:
+  chmod +x MASTER_SETUP_AND_RUN.sh
+  ./MASTER_SETUP_AND_RUN.sh
+
+📍 Best for Linux/Mac users who want everything automated!
+
+================================================================================
+6. 📊 VISUAL FLOWCHART
+================================================================================
+
+File: VISUAL_SETUP_FLOWCHART.txt
+
+Contains: Visual diagrams and detailed step explanations
+Best for: Understanding what each step does
+Includes:
+  ✓ ASCII flow diagram
+  ✓ Step-by-step explanations
+  ✓ Parameter reference
+  ✓ Expected output examples
+  ✓ Runtime expectations
+  ✓ Error recovery procedures
+
+📍 Read this if you want to understand the technical details!
+
+================================================================================
+QUICK DECISION TREE
+================================================================================
+
+"I just want to run it now"
+ → Read: QUICK_START.txt
+ → Run: .\MASTER_SETUP_AND_RUN.ps1 (Windows) or MASTER_SETUP_AND_RUN.sh (Linux)
+
+"I want to understand everything"
+ → Read: COMPLETE_MASTER_SETUP_GUIDE.txt
+
+"I want to copy-paste a command"
+ → Read: MASTER_COMMAND_COPY_PASTE.txt
+ → Copy ONE of the commands and paste it
+
+"I want to see a flowchart"
+ → Read: VISUAL_SETUP_FLOWCHART.txt
+
+"Something is broken"
+ → Read: COMPLETE_MASTER_SETUP_GUIDE.txt → TROUBLESHOOTING section
+
+================================================================================
+THE SIMPLEST POSSIBLE START
+================================================================================
+
+Do this right now if you want to just get started:
+
+WINDOWS:
+  1. Open PowerShell
+  2. Navigate to project folder
+  3. Paste this: .\MASTER_SETUP_AND_RUN.ps1
+  4. Press Enter
+
+LINUX / MAC:
+  1. Open Terminal
+  2. Navigate to project folder
+  3. Paste these:
+     chmod +x MASTER_SETUP_AND_RUN.sh
+     ./MASTER_SETUP_AND_RUN.sh
+  4. Press Enter
+
+That's it. Everything else happens automatically.
+
+================================================================================
+WHAT THE MASTER SCRIPTS DO (SAME ON ALL PLATFORMS)
+================================================================================
+
+Step 1: Create Python virtual environment
+  → Isolated environment for this project
+  → Keeps dependencies separate
+
+Step 2: Upgrade pip (Python package manager)
+  → Latest version of pip
+  → Better installation
+
+Step 3: Install all dependencies
+  → PyTorch (deep learning)
+  → TorchVision (computer vision)
+  → NumPy, SciPy (math)
+  → TensorBoard (visualization)
+  → Everything from requirements.txt
+
+Step 4: Verify installation
+  → Checks Python version
+  → Checks PyTorch works
+  → Detects GPU/CUDA if available
+  → Verifies all packages
+
+Step 5: Create directory structure
+  → save_dir/ (for models)
+  → tb_logger/ (for logs)
+  → csv_files/ (for image lists)
+  → data/ folders (for images)
+  → features/ folders (for outputs)
+
+Step 6: Prepare CSV file
+  → Checks if csv_files/moco_train.csv exists
+  → Creates sample if needed
+  → YOU MUST update with your image paths
+
+Step 7: Run training
+  → Loads images from CSV
+  → Initializes neural network
+  → Trains for 200 epochs
+  → Saves models and logs
+  → Complete when finished
+
+================================================================================
+CUSTOMIZATION - BEFORE YOU RUN
+================================================================================
+
+All scripts use these DEFAULT parameters:
+  Batch size: 128
+  Epochs: 200
+  Learning rate: 0.05
+  Optimizer: SGD
+  Architecture: ResNet50
+  Workers: 4
+
+TO CHANGE THESE:
+
+Option 1: Edit the script file directly
+  - Open MASTER_SETUP_AND_RUN.ps1 (Windows) or MASTER_SETUP_AND_RUN.sh (Linux)
+  - Change values at the top where it says "CONFIGURATION"
+  - Save and run
+
+Option 2: Use one-liner with custom values
+  - See MASTER_COMMAND_COPY_PASTE.txt
+  - Copy a command
+  - Modify the parameter values
+  - Paste and run
+
+Example with smaller batch size:
+  Change: --batch_size 128
+  To:     --batch_size 64
+
+Example with more epochs:
+  Change: --epochs 200
+  To:     --epochs 500
+
+================================================================================
+PREREQUISITES CHECKLIST
+================================================================================
+
+Before running any script, verify you have:
+
+□ Python 3.8 or higher installed
+  Check: python --version
+  If missing: Download from python.org
+
+□ CSV file with image paths (or script creates template)
+  Location: csv_files/moco_train.csv
+  Format: One image path per line
+
+□ Training images available
+  Can be anywhere, just list paths in CSV
+
+□ Internet connection
+  For downloading packages from PyPI (first time only)
+
+□ 8GB+ free disk space
+  For virtual environment and dependencies
+
+□ GPU preferred (but CPU works too)
+  GPU: Training takes hours instead of days
+
+That's all you need!
+
+================================================================================
+EACH MASTER SCRIPT INCLUDES
+================================================================================
+
+All scripts (PS1 and SH) include:
+
+✓ Error handling
+  → Continues on issues or retries
+  → Clear error messages if something fails
+
+✓ Progress indicators
+  → Step counter (1/7, 2/7, etc.)
+  → Colored output (green=success, red=error)
+  → Checkmarks and status messages
+
+✓ Verification steps
+  → Checks Python version
+  → Verifies PyTorch
+  → Detects CUDA/GPU
+  → Confirms all packages installed
+
+✓ Automatic recovery
+  → Creates venv if missing
+  → Retries failed pip installs
+  → Creates sample CSV if needed
+  → Handles missing directories
+
+✓ Training configuration
+  → Shows all parameters before starting
+  → Easy to modify
+  → Clear output during training
+
+✓ Helpful information
+  → Where models are saved
+  → How to view TensorBoard
+  → What to do next
+
+================================================================================
+WHAT TO EXPECT AFTER RUNNING
+================================================================================
+
+DURING EXECUTION:
+
+✓ Virtual environment activated
+✓ Pip upgraded
+✓ Dependencies installed (may take 5-10 minutes)
+✓ Installation verified with green checkmarks
+✓ Directories created
+✓ CSV prepared or asked to update
+✓ Training starts...
+
+DURING TRAINING:
+
+→ Epoch 1/200 ... loss: 5.234, acc: 0.45
+→ Epoch 2/200 ... loss: 4.982, acc: 0.52
+→ (continues for all 200 epochs, takes hours)
+→ Checkpoint saved: ./save_dir/model_0010.pth
+→ (every 10 epochs)
+→ Epoch 200/200 ... loss: 0.234, acc: 0.98
+
+AFTER TRAINING:
+
+✓ TRAINING COMPLETED SUCCESSFULLY!
+✓ Models saved: ./save_dir/
+✓ Logs saved: ./tb_logger/
+→ To view TensorBoard: tensorboard --logdir=./tb_logger
+
+================================================================================
+NEXT STEPS AFTER TRAINING
+================================================================================
+
+Once training finishes (can take 8-48 hours depending on GPU):
+
+Step 1: Extract quality-aware features
+  python demo_quality_aware_feats.py --model_path ./save_dir/best_model.pth
+
+Step 2: Extract content-aware features
+  python demo_content_aware_feats.py --model_path ./save_dir/best_model.pth
+
+Step 3: Use features for your task
+  • Image quality assessment
+  • Image similarity search
+  • Classification
+  • Feature visualization
+  • Any downstream AI task
+
+================================================================================
+FILES YOU CREATED / NEED
+================================================================================
+
+FILES YOU RAN:
+✓ MASTER_SETUP_AND_RUN.ps1     (Windows automated script)
+✓ MASTER_SETUP_AND_RUN.sh      (Linux/Mac automated script)
+
+FILES YOU READ:
+✓ QUICK_START.txt              (30-second overview)
+✓ COMPLETE_MASTER_SETUP_GUIDE.txt (Complete guide)
+✓ MASTER_COMMAND_COPY_PASTE.txt (All command variants)
+✓ VISUAL_SETUP_FLOWCHART.txt   (Technical details)
+
+FILES YOU NEED TO PREPARE:
+□ csv_files/moco_train.csv     (YOUR image paths - required!)
+□ data/train/ or anywhere      (YOUR training images - recommended)
+
+AUTOMATICALLY CREATED BY SCRIPTS:
+□ .venv/                       (Virtual environment)
+□ save_dir/                    (Trained models)
+□ tb_logger/                   (Training logs)
+□ features/                    (Extracted features)
+
+================================================================================
+TROUBLESHOOTING QUICK LINKS
+================================================================================
+
+Problem: "No module named torch"
+  → See COMPLETE_MASTER_SETUP_GUIDE.txt → TROUBLESHOOTING section
+
+Problem: "CUDA out of memory"
+  → See COMPLETE_MASTER_SETUP_GUIDE.txt → TROUBLESHOOTING section
+
+Problem: "CSV file not found"
+  → See COMPLETE_MASTER_SETUP_GUIDE.txt → TROUBLESHOOTING section
+
+Problem: Script won't run
+  → See VISUAL_SETUP_FLOWCHART.txt → ERROR HANDLING section
+
+For any issue:
+  → Read COMPLETE_MASTER_SETUP_GUIDE.txt
+  → Look up problem in TROUBLESHOOTING section
+  → Follow the solution
+
+================================================================================
+SUMMARY
+================================================================================
+
+You now have:
+
+✅ 1 Windows automated setup script (MASTER_SETUP_AND_RUN.ps1)
+✅ 1 Linux/Mac automated setup script (MASTER_SETUP_AND_RUN.sh)
+✅ Complete copy-paste commands (MASTER_COMMAND_COPY_PASTE.txt)
+✅ Full documentation (multiple guides)
+✅ Visual flowchart (VISUAL_SETUP_FLOWCHART.txt)
+✅ Quick start guide (QUICK_START.txt)
+
+All methods do the SAME THING:
+1. Setup Python environment
+2. Install dependencies
+3. Create directories
+4. Verify setup
+5. Run training
+
+Just pick one and copy-paste!
+
+================================================================================

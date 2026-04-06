@@ -1,0 +1,32 @@
+================================================================================
+ABSOLUTE QUICKEST START - JUST COPY ONE LINE BELOW
+================================================================================
+
+⭐ IF YOU'RE ON WINDOWS (PowerShell):
+
+.\MASTER_SETUP_AND_RUN.ps1
+
+
+⭐ IF YOU'RE ON LINUX/MAC (Terminal):
+
+chmod +x MASTER_SETUP_AND_RUN.sh && ./MASTER_SETUP_AND_RUN.sh
+
+
+⭐ WHAT HAPPENS:
+  ✓ Creates virtual environment
+  ✓ Installs all dependencies (PyTorch, torchvision, etc.)
+  ✓ Creates all needed folders
+  ✓ Verifies setup
+  ✓ Starts training automatically
+
+⭐ BEFORE YOU START:
+  □ You must be in the project directory (cd /path/to/reiqamodified/burner-reiqamodified)
+  □ You need Python 3.8+ (check with: python --version)
+  □ You need a CSV file at: csv_files/moco_train.csv
+     (Should contain paths to your training images, one per line)
+
+⭐ THAT'S ALL YOU NEED TO DO!
+
+The entire setup and training will happen automatically.
+
+================================================================================

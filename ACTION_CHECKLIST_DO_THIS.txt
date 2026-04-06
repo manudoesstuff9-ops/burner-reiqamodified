@@ -1,0 +1,311 @@
+================================================================================
+📋 YOUR ACTION CHECKLIST - DO THIS NOW
+================================================================================
+
+Everything is set up! Follow these 3 simple steps to start training:
+
+================================================================================
+STEP 1: DOWNLOAD DATASETS
+================================================================================
+
+Open these links in your browser and download:
+
+[ ] KADIS-700K (1GB)
+    LINK: http://database.mmsp-kn.de/kadis700k.html
+    DOWNLOAD: Download button on their website
+    SAVE TO: Your Downloads folder (or anywhere)
+    
+[ ] COCO 2017 Train (19GB)
+    LINK: https://cocodataset.org/#download
+    DOWNLOAD: "2017 Train images" link
+    SAVE TO: Your Downloads folder
+    
+[ ] COCO 2017 Val (1GB)
+    LINK: https://cocodataset.org/#download
+    DOWNLOAD: "2017 Val images" link
+    SAVE TO: Your Downloads folder
+
+[ ] COCO 2015 Test (7GB) [OPTIONAL BUT RECOMMENDED]
+    LINK: https://cocodataset.org/#download
+    DOWNLOAD: "2015 Test images" link
+    SAVE TO: Your Downloads folder
+
+[ ] Optional (skip if internet is slow):
+    ☐ COCO 2017 Unlabeled (35GB)
+    ☐ AVA Dataset (40GB)
+    ☐ VOC2012 (2GB)
+
+================================================================================
+STEP 2: EXTRACT TO FOLDERS
+================================================================================
+
+For each downloaded dataset zip file:
+
+[ ] KADIS-700K
+    DOWNLOAD FILE: KADIS-700K_release.zip (or similar)
+    EXTRACT TO: training_data/kadis/
+    
+    Steps:
+    1. Right-click the zip file
+    2. Select "Extract All..."
+    3. Extract to: c:\Users\mohit\Desktop\reiqamodified\burner-reiqamodified\training_data\kadis
+    4. Verify result: You should see .png files directly in training_data/kadis/
+    
+[ ] COCO 2017 Train
+    DOWNLOAD FILE: train2017.zip
+    EXTRACT TO: training_data/coco_train/
+    
+    Steps:
+    1. Right-click train2017.zip
+    2. Select "Extract All..."
+    3. Extract to: training_data/coco_train
+    4. You'll get train2017/ subfolder
+    5. MOVE all files from train2017/ directly to coco_train/
+    6. Delete empty train2017/ folder
+    7. Verify result: You should see .jpg files directly in training_data/coco_train/
+    
+[ ] COCO 2017 Val
+    Same as above but:
+    - File: val2017.zip
+    - Extract to: training_data/coco_val/
+    - Move files from val2017/ subfolder to coco_val/
+    
+[ ] COCO 2015 Test
+    Same as above but:
+    - File: test2015.zip
+    - Extract to: training_data/coco_test/
+    - Move files from test2015/ subfolder to coco_test/
+
+[ ] Others (if downloading):
+    Follow same pattern for each dataset
+
+================================================================================
+OPTIONAL FASTER WAY (COMMAND LINE)
+================================================================================
+
+If you're comfortable with PowerShell, this is faster:
+
+Open PowerShell and run:
+
+# Extract KADIS
+Expand-Archive "C:\Users\[YourUsername]\Downloads\KADIS-700K_release.zip" `
+  -DestinationPath "training_data\kadis"
+
+# Extract COCO Train
+Expand-Archive "C:\Users\[YourUsername]\Downloads\train2017.zip" `
+  -DestinationPath "training_data\coco_train"
+
+# Extract COCO Val
+Expand-Archive "C:\Users\[YourUsername]\Downloads\val2017.zip" `
+  -DestinationPath "training_data\coco_val"
+
+# Extract COCO Test
+Expand-Archive "C:\Users\[YourUsername]\Downloads\test2015.zip" `
+  -DestinationPath "training_data\coco_test"
+
+================================================================================
+STEP 3: RUN THE TRAINING SCRIPT
+================================================================================
+
+Once all files are extracted:
+
+1. Open PowerShell in the project folder:
+   Start → Search "PowerShell"
+   Right-click "Windows PowerShell"
+   Select "Run as Administrator"
+   
+2. Navigate to project folder:
+   cd c:\Users\mohit\Desktop\reiqamodified\burner-reiqamodified
+   
+3. Run the setup script:
+   .\MASTER_SETUP_AND_RUN.ps1
+   
+4. Wait and watch:
+   - Virtual environment created ✓
+   - Dependencies installed ✓
+   - Folders created ✓
+   - Training started ✓
+   
+5. Training will run automatically for 200 epochs (~1-2 hours on GPU)
+
+That's it! Just watch it go! 🎯
+
+================================================================================
+VERIFICATION BEFORE RUNNING SCRIPT
+================================================================================
+
+Before you run step 3, verify everything is in place:
+
+Run these commands in PowerShell:
+
+[ ] Check KADIS folder:
+    dir training_data\kadis
+    (Should show .png files - at least one)
+    
+[ ] Check COCO Train folder:
+    dir training_data\coco_train
+    (Should show .jpg files - at least one)
+    
+[ ] Check CSV file:
+    Get-Content csv_files\moco_train.csv | Select-Object -First 5
+    (Should show "training_data/kadis/" and "training_data/coco_train/")
+    
+[ ] Check script exists:
+    ls MASTER_SETUP_AND_RUN.ps1
+    (Should show the file)
+
+If all checks pass → RUN THE SCRIPT!
+
+================================================================================
+WHAT TO EXPECT DURING TRAINING
+================================================================================
+
+Typical console output:
+
+[1:45 PM] Creating virtual environment from base Python installation...
+[1:46 PM] Activating virtual environment (.venv)...
+[1:46 PM] Upgrading pip to latest version...
+[1:47 PM] Installing dependencies from requirements.txt...
+  - torch (2.0.0)
+  - torchvision
+  - numpy
+  - scipy
+  - scikit-image
+  - scikit-learn
+  - tensorboard
+  [Installing...████████████████] 100%
+[1:50 PM] Verifying PyTorch installation...
+✓ PyTorch installed successfully
+✓ CUDA available: Yes (GPU will be used)
+✓ GPU: NVIDIA RTX 3090
+[1:51 PM] Creating necessary directories...
+✓ save_dir/
+✓ tb_logger/
+✓ data/train/
+✓ csv_files/
+[1:51 PM] Starting training...
+
+Loading dataset from csv_files/moco_train.csv...
+Found 1000 images
+Creating data loader with batch size 128...
+Starting training... Epoch 1/200
+
+Epoch 1/200 [=====>           ] 10% | Loss: 4.523 | Time: 0:05:30
+Epoch 1/200 [=========>       ] 25% | Loss: 4.231 | Time: 0:12:45
+Epoch 1/200 [==============>  ] 50% | Loss: 3.892 | Time: 0:25:30
+Epoch 1/200 [==================] 100% | Loss: 3.456 | Time: 0:51:00
+Saved checkpoint: save_dir/epoch_001.pth
+
+Epoch 2/200 [==================] 100% | Loss: 3.234 | Time: 0:48:00
+Saved checkpoint: save_dir/epoch_002.pth
+
+...
+
+Epoch 200/200 [==================] 100% | Loss: 0.892 | Time: 0:47:00
+Saved checkpoint: save_dir/epoch_200.pth
+Saved final model: save_dir/final_model.pth
+
+Training complete! ✓
+
+═══════════════════════════════════════════════════════════════════════════
+To view training progress with TensorBoard:
+  tensorboard --logdir tb_logger
+═══════════════════════════════════════════════════════════════════════════
+
+This is normal! Let it run. Don't close the window.
+
+================================================================================
+IF SOMETHING GOES WRONG
+================================================================================
+
+Error: "No images found in training_data"
+→ You haven't downloaded/extracted datasets yet
+→ Go back to STEP 2 and make sure files are in the folders
+
+Error: "ModuleNotFoundError: No module named 'torch'"
+→ The script will install it automatically
+→ Just run the script again
+
+Error: "Permission denied"
+→ Close PowerShell and open as Administrator
+→ Run: powershell -ExecutionPolicy Bypass -NoExit -Command ".\MASTER_SETUP_AND_RUN.ps1"
+
+Error: Training is very slow (takes hours for first epoch)
+→ This is NORMAL on CPU or first pass with large datasets
+→ Subsequent epochs should be faster
+→ If GPU is available, it should speed up significantly
+
+Error: Out of memory (OOM)
+→ Your GPU doesn't have enough VRAM
+→ You can either:
+  a) Reduce batch size (edit script, change --batch_size from 128 to 64)
+  b) Use CPU instead (slower but will work)
+  c) Get a bigger GPU
+
+For detailed troubleshooting, see COMPLETE_MASTER_SETUP_GUIDE.txt
+
+================================================================================
+AFTER TRAINING COMPLETES
+================================================================================
+
+Your trained model will be saved here:
+  c:\Users\mohit\Desktop\reiqamodified\burner-reiqamodified\save_dir\
+  
+Checkpoints:
+  save_dir/epoch_001.pth ← First epoch
+  save_dir/epoch_100.pth ← Halfway point
+  save_dir/epoch_200.pth ← Final model ← USE THIS ONE
+  
+Training logs:
+  tb_logger/ ← View with TensorBoard
+  
+You can now:
+  ✓ Use the trained model for inference
+  ✓ Fine-tune it on your own data
+  ✓ Evaluate quality assessment capabilities
+  ✓ Export embeddings for analysis
+
+Test it with demo scripts:
+  python demo_quality_aware_feats.py
+  python demo_content_aware_feats.py
+  python demo_quality_aware_feats_mde.py
+
+================================================================================
+QUICK REFERENCE - KEY LINKS
+================================================================================
+
+Datasets Download:
+  • KADIS:     http://database.mmsp-kn.de/kadis700k.html
+  • COCO:      https://cocodataset.org/#download
+  • AVA:       https://github.com/mtobeiyf/ava
+  • VOC2012:   http://host.robots.ox.ac.uk/pascal/VOC/
+
+Documentation:
+  • SETUP_COMPLETE_NEXT_STEPS.txt ← Full instructions
+  • DATASET_ORGANIZATION_GUIDE.txt ← Dataset guide
+  • COMPLETE_MASTER_SETUP_GUIDE.txt ← Detailed manual
+  • CSV_VERIFICATION_BEFORE_AFTER.txt ← What changed
+
+Scripts:
+  • MASTER_SETUP_AND_RUN.ps1 ← RUN THIS
+  • MASTER_SETUP_AND_RUN.sh ← Or this on Mac/Linux
+
+================================================================================
+💡 BOTTOM LINE
+================================================================================
+
+1. Download datasets (copy links above into browser)
+2. Extract to training_data/[dataset_name]/ folders
+3. Run: .\MASTER_SETUP_AND_RUN.ps1
+4. Watch training happen automatically!
+
+That's all you need to do! The script handles everything else.
+
+Estimated time:
+  • Dataset download: 2-8 hours (depends on internet)
+  • Dataset extraction: 30 min - 2 hours
+  • Training: 1-2 hours on GPU (24-48 hours on CPU)
+
+You're ready! 🚀
+
+================================================================================
