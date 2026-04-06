@@ -347,7 +347,11 @@ def build_contrast_loader(opt, ngpus_per_node):
         batch_size = int(opt.batch_size / opt.world_size)
     else:
         batch_size = opt.batch_size
-    num_workers = int((opt.num_workers + ngpus_per_node - 1) / ngpus_per_node)
+    # Reduce workers for single GPU/CPU mode to avoid warnings and slowdowns
+    if ngpus_per_node <= 1:
+        num_workers = min(4, opt.num_workers)  # Use 4 workers max for single GPU/CPU
+    else:
+        num_workers = int((opt.num_workers + ngpus_per_node - 1) / ngpus_per_node)
     csv_path = opt.csv_path
     #train_transform, jigsaw_transform = \
     #    build_transforms(aug, modal, use_memory_bank)
@@ -374,7 +378,7 @@ def build_contrast_loader(opt, ngpus_per_node):
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=batch_size, shuffle=(train_sampler is None),
-        num_workers=num_workers, pin_memory=True, sampler=train_sampler)
+        num_workers=num_workers, pin_memory=torch.cuda.is_available(), sampler=train_sampler)
 
     print('train images: {}'.format(len(train_dataset)))
 
