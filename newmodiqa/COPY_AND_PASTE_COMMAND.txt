@@ -1,0 +1,146 @@
+================================================================================
+RE-IQA PROJECT - COPY & PASTE THIS ONE COMMAND
+================================================================================
+
+BEFORE YOU RUN THIS:
+  1. Make sure csv_files/moco_train.csv exists with image paths
+  2. Open PowerShell in the project directory
+  3. Copy the command below
+  4. Paste into PowerShell and press Enter
+
+THE ONE COMMAND TO RUN EVERYTHING:
+════════════════════════════════════════════════════════════════════════════
+
+.\.venv\Scripts\Activate.ps1; python -m pip install -q -r requirements.txt; New-Item -ItemType Directory -Force -Path "save_dir","tb_logger" | Out-Null; python main_contrast.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+════════════════════════════════════════════════════════════════════════════
+
+That's it! Just copy and paste this ONE command above ^
+
+This command will:
+  ✓ Activate virtual environment
+  ✓ Install all dependencies
+  ✓ Create save and tensorboard directories
+  ✓ Start training with optimal parameters
+
+Expected runtime: ~48 hours on 8×RTX3090
+================================================================================
+
+WHAT IF I HAVE A SMALLER GPU?
+════════════════════════════════════════════════════════════════════════════
+
+For 8GB GPU (like RTX 4060):
+  Replace --batch_size 128 with --batch_size 32
+
+For 16GB GPU (like RTX 4070):
+  Replace --batch_size 128 with --batch_size 64
+
+Full command for RTX 4060:
+
+.\.venv\Scripts\Activate.ps1; python -m pip install -q -r requirements.txt; New-Item -ItemType Directory -Force -Path "save_dir","tb_logger" | Out-Null; python main_contrast.py --batch_size 32 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+════════════════════════════════════════════════════════════════════════════
+
+WHAT IF I WANT TO USE THE MDE VARIANT (26 DISTORTION HEADS)?
+════════════════════════════════════════════════════════════════════════════
+
+Replace main_contrast.py with main_contrast_mde.py:
+
+.\.venv\Scripts\Activate.ps1; python -m pip install -q -r requirements.txt; New-Item -ItemType Directory -Force -Path "save_dir","tb_logger" | Out-Null; python main_contrast_mde.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+════════════════════════════════════════════════════════════════════════════
+
+WHAT IF I WANT FEWER EPOCHS (FOR QUICK TEST)?
+════════════════════════════════════════════════════════════════════════════
+
+Replace --epochs 200 with --epochs 10 for quick test:
+
+.\.venv\Scripts\Activate.ps1; python -m pip install -q -r requirements.txt; New-Item -ItemType Directory -Force -Path "save_dir","tb_logger" | Out-Null; python main_contrast.py --batch_size 128 --epochs 10 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+════════════════════════════════════════════════════════════════════════════
+
+HOW TO MONITOR WHILE TRAINING
+════════════════════════════════════════════════════════════════════════════
+
+Open another PowerShell window and run:
+
+  tensorboard --logdir=./tb_logger/
+
+Then open browser to:
+  http://localhost:6006
+
+You'll see real-time graphs of:
+  - Loss
+  - Accuracy
+  - Learning rate
+  - Other metrics
+
+════════════════════════════════════════════════════════════════════════════
+
+PARAMETER EXPLANATIONS:
+════════════════════════════════════════════════════════════════════════════
+
+Main parameters in the command:
+
+  --batch_size 128        How many images per batch
+  --epochs 200            How many training passes through full dataset
+  --learning_rate 0.05    How fast model learns
+  --optimizer SGD         Algorithm (SGD/AdamW/LARS)
+  --arch resnet50         Model backbone (resnet50/101/152)
+  --feat_dim 256          Output feature dimension
+  --cosine                Enable cosine annealing schedule
+  --warm                  Enable warmup period
+  --head linear           Type of projection head
+  --num_workers 4         Parallel data loading
+  --model_path ./save_dir Where to save checkpoints
+  --tb_path ./tb_logger   Where to save tensorboard logs
+  --csv_path ...csv       Path to image list CSV
+  --multiprocessing_distributed  Use all GPUs
+
+════════════════════════════════════════════════════════════════════════════
+
+EXPECTED OUTPUT:
+════════════════════════════════════════════════════════════════════════════
+
+When you run it, you should see:
+
+  ✓ Virtual environment activated
+  ✓ Dependencies installed
+  ✓ Initializing model...
+  ✓ Building dataset...
+  
+  Epoch [1/200] Loss: 5.234 Acc@1: 23.4% Acc@5: 45.6%
+  Epoch [1/200] Loss: 4.521 Acc@1: 34.2% Acc@5: 56.3%
+  ...
+  Epoch [1/200] Saving checkpoint...
+  
+  Epoch [2/200] Loss: 3.891 Acc@1: 52.1% Acc@5: 71.3%
+  ...
+
+This is normal! Training is working.
+
+════════════════════════════════════════════════════════════════════════════
+
+IF YOU GET AN ERROR:
+════════════════════════════════════════════════════════════════════════════
+
+"CUDA out of memory":
+  → Reduce batch size (try 64 or 32)
+
+"No module named 'torch'":
+  → Virtual environment not activated
+  → Try: .\.venv\Scripts\Activate.ps1
+
+"CSV file not found":
+  → Create csv_files/moco_train.csv with image paths
+
+For more help, see:
+  - SETUP_VERIFICATION_AND_INITIALIZATION.txt
+  - RUN_SINGLE_COMMAND.txt (more detailed)
+  - COMPLETE_CODEBASE_DOCUMENTATION.txt
+
+════════════════════════════════════════════════════════════════════════════
+
+Good luck with training! 🚀
+
+════════════════════════════════════════════════════════════════════════════

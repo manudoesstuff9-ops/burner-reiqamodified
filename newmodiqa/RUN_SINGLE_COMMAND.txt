@@ -1,0 +1,352 @@
+================================================================================
+RE-IQA PROJECT - SINGLE COMMAND TO RUN EVERYTHING
+================================================================================
+
+TABLE OF CONTENTS:
+1. PreRequisites (What you need before running)
+2. Option A: PowerShell Script (EASIEST - 1 command)
+3. Option B: Single-Line Command (Advanced)
+4. Option C: Step-by-Step Commands
+5. Understanding the Parameters
+6. Monitoring Training
+7. Troubleshooting
+
+================================================================================
+PART 1: PREREQUISITES
+================================================================================
+
+BEFORE RUNNING ANYTHING, YOU MUST HAVE:
+
+1. ✓ Virtual environment created:
+   .venv folder exists
+   
+   If not, create it:
+     python -m venv .venv
+
+2. ✓ CSV file created at: csv_files/moco_train.csv
+   
+   Format:
+     Image_path
+     /path/to/image1.jpg
+     /path/to/image2.jpg
+     /path/to/image3.jpg
+
+   If missing:
+     Create csv_files folder first: mkdir csv_files
+     Create CSV with image paths
+
+3. ✓ Training data at: data/train/
+   
+   Put your images there or update --csv_path in commands below
+
+4. ✓ CUDA check:
+   python -c "import torch; print(torch.cuda.is_available())"
+   
+   Should output: True (if GPU available)
+
+
+================================================================================
+PART 2: OPTION A - POWERSHELL SCRIPT (SIMPLEST)
+================================================================================
+
+This is the EASIEST way - just run the script and it does everything!
+
+STEP 1: Copy this entire command and paste in PowerShell:
+
+════════════════════════════════════════════════════════════════════════════
+
+$content = @'
+`$ErrorActionPreference = "Stop"
+Write-Host "`n`$('='*80)"
+Write-Host "RE-IQA COMPLETE PROJECT RUNNER"
+Write-Host "`$('='*80)`n"
+
+Write-Host "[STEP 1/5] Activating virtual environment..." -ForegroundColor Cyan
+& ".\.venv\Scripts\Activate.ps1"
+Write-Host "✓ Virtual environment activated" -ForegroundColor Green
+
+Write-Host "`n[STEP 2/5] Verifying Python and CUDA..." -ForegroundColor Cyan
+python -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA: {torch.cuda.is_available()}'); print(f'GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"CPU\"}')"
+
+Write-Host "`n[STEP 3/5] Installing dependencies..." -ForegroundColor Cyan
+python -m pip install -q -r requirements.txt
+Write-Host "✓ Dependencies ready" -ForegroundColor Green
+
+Write-Host "`n[STEP 4/5] Creating directories..." -ForegroundColor Cyan
+New-Item -ItemType Directory -Force -Path "save_dir" | Out-Null
+New-Item -ItemType Directory -Force -Path "tb_logger" | Out-Null
+Write-Host "✓ Directories created" -ForegroundColor Green
+
+Write-Host "`n[STEP 5/5] Starting training..." -ForegroundColor Cyan
+python main_contrast.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+Write-Host "`n`$('='*80)`nTraining complete!`n" -ForegroundColor Green
+'@
+
+$content | Out-File -Encoding UTF8 RUN_PROJECT.ps1
+& ".\RUN_PROJECT.ps1"
+
+════════════════════════════════════════════════════════════════════════════
+
+STEP 2: Press Enter and wait for training to complete!
+
+That's it! The script will:
+  ✓ Activate virtual environment
+  ✓ Check Python/CUDA
+  ✓ Install dependencies
+  ✓ Create directories
+  ✓ Run full training
+
+
+================================================================================
+PART 3: OPTION B - SINGLE-LINE COMMAND (FOR EXPERTS)
+================================================================================
+
+If you prefer to run everything in one line (after activation):
+
+════════════════════════════════════════════════════════════════════════════
+
+.\.venv\Scripts\Activate.ps1; python -m pip install -q -r requirements.txt; New-Item -ItemType Directory -Force -Path "save_dir","tb_logger" | Out-Null; python main_contrast.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+════════════════════════════════════════════════════════════════════════════
+
+COPY THIS EXACTLY and paste into PowerShell!
+
+
+================================================================================
+PART 4: OPTION C - STEP-BY-STEP COMMANDS
+================================================================================
+
+If you want to run commands individually (for debugging):
+
+Step 1 - Activate:
+  .\.venv\Scripts\Activate.ps1
+
+Step 2 - Check CUDA:
+  python -c "import torch; print(torch.cuda.is_available())"
+
+Step 3 - Install Dependencies:
+  python -m pip install -r requirements.txt
+
+Step 4 - Create Directories:
+  mkdir -Force save_dir, tb_logger
+
+Step 5 - Run Training:
+  python main_contrast.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+
+================================================================================
+PART 5: UNDERSTANDING THE PARAMETERS
+================================================================================
+
+What each parameter does:
+
+TRAINING:
+  --batch_size 128
+    Number of images per batch (adjust down if GPU memory error)
+    Common values: 64, 128, 256
+
+  --epochs 200
+    How many times to go through entire dataset
+    More epochs = better features (but slower)
+    Typical: 100-500 epochs
+
+  --learning_rate 0.05
+    How fast model learns
+    Lower = slower but more stable
+    Higher = faster but less stable
+
+OPTIMIZATION:
+  --optimizer SGD
+    Algorithm to update weights
+    Options: SGD, AdamW, LARS
+    SGD = classic, good default
+
+  --cosine
+    Cosine annealing learning rate schedule
+    Makes learning rate decrease smoothly
+
+  --warm
+    Warmup period at start
+    Stabilizes initial training
+
+MODEL:
+  --arch resnet50
+    Backbone architecture
+    Options: resnet50, resnet101, resnet152
+    resnet50 = good balance speed/accuracy
+
+  --feat_dim 256
+    Output feature dimension
+    Typical: 128, 256, 512
+    Higher = more expressive but slower
+
+  --head linear
+    Projection head type
+    Options: linear, mlp
+    linear = faster, mlp = more expressive
+
+DATA:
+  --num_workers 4
+    Parallel data loading threads
+    Higher = faster but more RAM
+    Set to 0 if error, 4 if fine
+
+PATHS:
+  --csv_path ./csv_files/moco_train.csv
+    Path to image list CSV file
+    Must exist with image paths!
+
+  --model_path ./save_dir
+    Where to save checkpoints
+
+  --tb_path ./tb_logger
+    Where to save tensorboard logs
+
+MULTI-GPU:
+  --multiprocessing_distributed
+    Uses all GPUs automatically
+    Remove if training on single GPU
+
+
+================================================================================
+PART 6: MONITORING TRAINING
+================================================================================
+
+While training is running, you can:
+
+OPTION 1: View TensorBoard in Real-Time
+  
+  Open new PowerShell window and run:
+    tensorboard --logdir=./tb_logger
+  
+  Then open browser: http://localhost:6006
+
+OPTION 2: Check GPU Usage
+  
+  Open new PowerShell and run:
+    :loop
+    nvidia-smi
+    Start-Sleep -Seconds 2
+    goto loop
+
+OPTION 3: View Checkpoints As They Save
+  
+  ls -Path save_dir | Sort-Object LastWriteTime -Descending | Select-Object -First 10
+
+Files you'll see during training:
+  ./save_dir/model_epoch_1.pth.tar
+  ./save_dir/model_epoch_2.pth.tar
+  ... (saved every 5 epochs by default)
+
+  ./tb_logger/
+    ├─ loss/
+    ├─ accuracy/
+    └─ learning_rate/
+
+
+================================================================================
+PART 7: TROUBLESHOOTING
+================================================================================
+
+ISSUE 1: "CSV file not found"
+  
+  SOLUTION:
+    1. Create csv_files/moco_train.csv
+    2. Add Image_path header
+    3. Add image paths (one per line)
+
+ISSUE 2: "CUDA out of memory"
+  
+  SOLUTION:
+    Reduce batch size:
+      Change: --batch_size 128
+      To: --batch_size 64
+    Or: --batch_size 32
+
+ISSUE 3: "No module named 'torch'"
+  
+  SOLUTION:
+    Check virtual environment is activated:
+      .\.venv\Scripts\Activate.ps1
+    Then reinstall:
+      python -m pip install torch torchvision
+
+ISSUE 4: "torch.cuda.is_available() returns False"
+  
+  SOLUTION:
+    Install CUDA PyTorch:
+      python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+ISSUE 5: Script fails at some step
+  
+  SOLUTION:
+    Run Option C (step-by-step) to find which step fails
+    Then debug that specific step
+
+
+================================================================================
+RECOMMENDED WORKFLOW
+================================================================================
+
+First Time Setup (One-time):
+  1. Create CSV: csv_files/moco_train.csv
+  2. Prepare data: Put images in data/train/
+  3. Run Option A script above
+
+Subsequent Training Runs:
+  Just run Option A script again!
+  It will resume if checkpoint exists
+
+Different Batch Sizes:
+  Change --batch_size value:
+    Small GPU (8GB): --batch_size 32
+    Medium GPU (16GB): --batch_size 64
+    Large GPU (24GB): --batch_size 128
+    Very Large (48GB+): --batch_size 256
+
+Different Training Lengths:
+  Change --epochs value:
+    Quick test: --epochs 10
+    Standard: --epochs 200
+    Extended: --epochs 500
+
+Alternative Architectures:
+  Change --arch value:
+    Smaller/faster: --arch resnet50
+    Medium: --arch resnet101
+    Larger/slower: --arch resnet152
+
+
+================================================================================
+QUICK START - COPY & PASTE THIS
+================================================================================
+
+After CSV is ready, paste this ONE command into PowerShell:
+
+.\.venv\Scripts\Activate.ps1; python -m pip install -q -r requirements.txt; New-Item -ItemType Directory -Force -Path "save_dir","tb_logger" | Out-Null; python main_contrast.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+
+Then press Enter!
+
+
+================================================================================
+EXPECTED OUTPUT
+================================================================================
+
+You should see:
+
+  Rank 0: Initialized process group with backend nccl
+  Initializing model: resnet50_ft_RGB_True
+  Model type: RGBSingleHead
+  
+  Epoch [1/200] [10/N] Loss 5.234 Acc@1 23.4 Acc@5 45.6 Lr 0.05000
+  Epoch [1/200] [20/N] Loss 4.521 Acc@1 34.2 Acc@5 56.3 Lr 0.05000
+  ...
+  
+  Saving model checkpoint to: save_dir/moco_RGB_resnet50_linear_nce_t_0.07_Jig_A_moco_aug_A_linear_0.07_warm_cosine/model_epoch_1.pth.tar
+
+If you see this → Training is working! ✓
+
+
+================================================================================
+END OF COMMANDS & INSTRUCTIONS
+================================================================================
