@@ -1,0 +1,1208 @@
+================================================================================
+COMPLETE SETUP, VERIFICATION, AND TROUBLESHOOTING GUIDE
+CUDA, Python, Dependencies, and Model Initialization
+================================================================================
+
+TABLE OF CONTENTS:
+1. Pre-Requisite System Checks
+2. Python Version Verification
+3. CUDA & GPU Verification
+4. Virtual Environment Setup
+5. Dependency Installation & Verification
+6. Model Initialization
+7. Complete Troubleshooting Guide
+8. Quick Diagnostic Commands
+
+================================================================================
+PART 1: PRE-REQUISITE SYSTEM CHECKS
+================================================================================
+
+STEP 1.1: Check Operating System
+═══════════════════════════════════
+
+Windows (PowerShell):
+  systeminfo
+  
+  Look for:
+    OS Name: Windows 10 / Windows 11
+    System Type: x64-based PC
+  
+Linux:
+  uname -a
+  
+  Look for:
+    x86_64 (64-bit system required)
+
+STEP 1.2: Check Available Disk Space
+════════════════════════════════════
+
+Windows (PowerShell):
+  Get-Volume | Format-Table
+  
+  Requires: Minimum 50GB free for training data
+
+Linux:
+  df -h
+  
+  Look for C: drive with 50GB+ free space
+
+STEP 1.3: Check RAM Available
+═════════════════════════════
+
+Windows (PowerShell):
+  Get-ComputerInfo | select TotalPhysicalMemory
+  
+  Requires: Minimum 16GB (32GB recommended)
+  
+  Convert to GB:
+    TotalPhysicalMemory / 1GB
+
+Linux:
+  free -h
+  
+  Look for "Mem:" line showing total available
+
+STEP 1.4: Check CPU Cores
+══════════════════════════
+
+Windows (PowerShell):
+  Get-ComputerInfo | select LogicalProcessorCount
+  
+  Should be: 8+ cores (ideal for data loading)
+
+Linux:
+  nproc
+  
+  Output: Number of cores available
+
+
+================================================================================
+PART 2: PYTHON VERSION VERIFICATION
+================================================================================
+
+STEP 2.1: Check Python Installation
+════════════════════════════════════
+
+Windows (PowerShell):
+  python --version
+  
+  Or:
+  python -c "import sys; print(sys.version)"
+  
+  Expected Output:
+    Python 3.8.x or higher
+    Python 3.9.x (recommended)
+    Python 3.10.x (recommended)
+  
+  NOT Compatible: Python 2.7, 3.6, 3.7
+
+Linux/Mac:
+  python3 --version
+  
+  If not found:
+    python --version
+
+STEP 2.2: Check Python Executable Path
+═══════════════════════════════════════
+
+Windows (PowerShell):
+  where python
+  
+  Output should show: C:\Users\...\AppData\Local\Programs\Python\...
+  
+  Or in virtual environment:
+    .venv\Scripts\python.exe
+
+Linux/Mac:
+  which python3
+  
+  Output: /usr/bin/python3 or /path/to/venv/bin/python3
+
+STEP 2.3: Check pip Version
+═══════════════════════════
+
+Windows:
+  python -m pip --version
+  
+  Expected: pip 21.0+ (older versions may have issues)
+  
+  If outdated:
+    python -m pip install --upgrade pip
+
+Linux/Mac:
+  python3 -m pip --version
+  
+  If not found or outdated:
+    python3 -m pip install --upgrade pip
+
+STEP 2.4: Check if Python has Expected Modules
+════════════════════════════════════════════════
+
+Windows (PowerShell):
+  python -c "import sys; print(sys.exec_prefix)"
+  
+  Output: Path to Python installation
+  
+  Windows (PowerShell) - Check installation is complete:
+  python -c "import distutils"
+  
+  If error: Reinstall Python (check "Include pip" and "Include tcl/tk")
+
+STEP 2.5: Fix Python Installation (If Needed)
+═════════════════════════════════════════════
+
+Option 1: Reinstall Python (Recommended)
+  
+  Windows:
+    1. Go to https://www.python.org/downloads/
+    2. Download Python 3.9 or 3.10
+    3. Run installer
+    4. IMPORTANT: Check these boxes:
+       ☑ Add Python to PATH
+       ☑ Include pip
+       ☑ Install for all users (optional)
+    5. Click "Install Now"
+    6. Verify: python --version
+
+Option 2: Update pip
+  
+  Windows (PowerShell):
+    python -m pip install --upgrade pip
+  
+  Linux/Mac:
+    python3 -m pip install --upgrade pip
+
+ISSUE: "python command not found"
+  
+  Windows PowerShell:
+    1. Check Python is installed and in PATH
+    2. Try: py --version (py launcher)
+    3. Use: py -m pip install --upgrade pip
+    4. Go to System Environment Variables
+    5. Edit PATH, add: C:\Users\<username>\AppData\Local\Programs\Python
+    6. Restart PowerShell
+  
+  Linux/Mac:
+    1. sudo apt-get install python3-pip (Ubuntu/Debian)
+    2. brew install python3 (Mac with Homebrew)
+    3. Use: python3 instead of python
+
+
+================================================================================
+PART 3: CUDA & GPU VERIFICATION
+================================================================================
+
+STEP 3.1: Check if NVIDIA GPU Exists
+════════════════════════════════════
+
+Windows (PowerShell):
+  nvidia-smi
+  
+  If command not found:
+    GPU drivers not installed!
+    → Go to Section "Fix GPU Drivers"
+
+  If command works, look for:
+    Name: NVIDIA GeForce RTX 3090, 4090, A100, etc.
+    Memory: 24GB / 8GB / 16GB (your GPU vRAM)
+    Driver Version: 500.0+ (should be recent)
+
+Linux:
+  nvidia-smi
+  
+  Same output as Windows
+
+Mac:
+  Macs with Intel: No NVIDIA GPU support
+  Macs with M1/M2: Use alternative setup (CPU only or Metal support)
+
+STEP 3.2: Check CUDA Version Installed
+═══════════════════════════════════════
+
+Windows/Linux (from nvidia-smi output):
+  Look for "CUDA Version" line
+  
+  Example output:
+    CUDA Version: 11.8
+    CUDA Version: 12.0
+    CUDA Version: 12.1
+  
+  Required: CUDA 11.0 or higher
+  Recommended: CUDA 11.8, 12.0, or 12.1
+
+STEP 3.3: Check cuDNN Installation
+═══════════════════════════════════
+
+Windows (PowerShell):
+  $env:CUDA_PATH
+  
+  Output: C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
+  
+  If no output: CUDA not properly installed
+  
+  Check cuDNN:
+    ls "$env:CUDA_PATH\include" | grep cudnn
+    
+    Should show: cudnn.h file exists
+
+Linux:
+  echo $CUDA_PATH
+  
+  Should show: /usr/local/cuda-11.8 or similar
+  
+  Check cuDNN:
+    ls /usr/local/cuda/include | grep cudnn
+    
+    Should show: cudnn.h
+
+STEP 3.4: Check PyTorch CUDA Support
+════════════════════════════════════
+
+Windows/Linux (Python):
+  python -c "import torch; print(torch.cuda.is_available())"
+  
+  Output should be:
+    True ✓ (CUDA is available)
+    False ✗ (CUDA not available - install GPU PyTorch)
+  
+  If True, check CUDA device:
+    python -c "import torch; print(torch.cuda.get_device_name(0))"
+    
+    Output: RTX 3090, RTX 4090, A100, etc.
+
+STEP 3.5: Check GPU Memory
+───────────────────────────
+
+Windows/Linux (Python):
+  python -c "import torch; print(torch.cuda.get_device_properties(0))"
+  
+  Look for:
+    name = RTX 3090
+    total_memory = 24000000000 (24GB)
+
+STEP 3.6: Test GPU with Simple Tensor
+──────────────────────────────────────
+
+Windows/Linux (Python):
+  python -c "import torch; t = torch.ones(1000, 1000).cuda(); print('GPU works!', t.device)"
+  
+  Output should show:
+    GPU works! cuda:0
+  
+  If error: See "Fix GPU Issues" section
+
+
+STEP 3.7: Fix GPU Drivers (If nvidia-smi fails)
+════════════════════════════════════════════════
+
+Windows:
+  1. Go to https://www.nvidia.com/Download/driverDetails.aspx
+  2. Select your GPU model
+  3. Download latest driver
+  4. Run installer with admin privileges
+  5. Restart computer
+  6. Verify: nvidia-smi
+  
+  Common GPU Models:
+    RTX 3090/4090 → GeForce Game Ready Driver
+    A100/H100 → Data Center GPU Manager
+    Quadro → Quadro Driver
+
+Linux (Ubuntu):
+  1. Remove old drivers:
+     sudo apt-get remove nvidia-driver-*
+     sudo apt-get remove cuda
+  
+  2. Install new driver:
+     sudo apt-get update
+     sudo apt-get install nvidia-driver-520
+     
+  3. Restart:
+     sudo reboot
+  
+  4. Verify:
+     nvidia-smi
+
+Mac:
+  GPU support via Metal (not CUDA)
+  Install PyTorch with Metal acceleration:
+    python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/torch_mps
+
+
+STEP 3.8: Fix CUDA Installation (If CUDA Version wrong)
+────────────────────────────────────────────────────────
+
+Windows:
+  1. Go to https://developer.nvidia.com/cuda-downloads
+  2. Select:
+     Operating System: Windows
+     Architecture: x86_64
+     Version: Latest (11.8 or 12.1)
+  3. Download installer
+  4. Run with admin privileges
+  5. Install CUDA Toolkit + cuDNN
+  6. Restart computer
+
+Linux (Ubuntu):
+  1. Remove old CUDA:
+     sudo apt-get remove cuda-*
+     rm -rf ~/cuda
+  
+  2. Install new CUDA:
+     wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-repo-ubuntu2004_12.1.0-1_amd64.deb
+     sudo apt-get install -f ./cuda-repo-ubuntu2004_12.1.0-1_amd64.deb
+     sudo apt-get update
+     sudo apt-get install cuda-toolkit-12-1
+  
+  3. Add to PATH:
+     echo 'export PATH=/usr/local/cuda-12.1/bin:$PATH' >> ~/.bashrc
+     bash
+  
+  4. Verify:
+     nvcc --version
+
+
+STEP 3.9: Verify Complete GPU Stack
+─────────────────────────────────════
+
+Run all these commands:
+
+1. Check driver:
+   nvidia-smi
+   Output: Driver Version 530.0+
+
+2. Check CUDA:
+   nvcc --version
+   Output: CUDA Version 11.8 or higher
+
+3. Check PyTorch CUDA:
+   python -c "import torch; print('CUDA:', torch.cuda.is_available())"
+   Output: True
+
+4. Check cuDNN:
+   python -c "import torch; print('cuDNN:', torch.backends.cudnn.enabled)"
+   Output: True
+
+5. Check GPU memory:
+   python -c "import torch; print('GPU:', torch.cuda.get_device_name(0))"
+   Output: Your GPU name (RTX 3090, etc.)
+
+If all 5 pass → GPU is fully configured! ✓
+
+
+================================================================================
+PART 4: VIRTUAL ENVIRONMENT SETUP
+================================================================================
+
+STEP 4.1: Create Virtual Environment
+════════════════════════════════════
+
+Navigate to project directory:
+
+Windows (PowerShell):
+  cd C:\Users\mohit\Desktop\reiqamodified\burner-reiqamodified
+  
+Create virtual environment:
+  python -m venv .venv
+  
+  Output: [########################] 100%
+  Created: .venv folder with Python installation
+
+Linux/Mac:
+  cd ~/Desktop/reiqamodified/burner-reiqamodified
+  python3 -m venv .venv
+  
+  Created: .venv folder
+
+STEP 4.2: Activate Virtual Environment
+═══════════════════════════════════════
+
+Windows (PowerShell):
+  .\.venv\Scripts\Activate.ps1
+  
+  Output: (.venv) PS C:\Users\...>
+  
+  Note: If error "execution policy", run:
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+Windows (Command Prompt):
+  .venv\Scripts\activate.bat
+  
+  Output: (.venv) C:\Users\...>
+
+Linux/Mac (Bash):
+  source .venv/bin/activate
+  
+  Output: (.venv) $
+
+STEP 4.3: Verify Virtual Environment is Activated
+═══════════════════════════════════════════════════
+
+Windows (PowerShell):
+  python -m site
+  
+  Look for:
+    USER_SITE: .venv\Lib\site-packages
+    
+  Or check pip location:
+    python -m pip show pip
+    
+    Location should be: path/to/.venv/Lib/site-packages
+
+Linux/Mac:
+  which python
+  
+  Output should show: /path/to/.venv/bin/python
+
+STEP 4.4: Upgrade pip in Virtual Environment
+══════════════════════════════════════════════
+
+Windows/Linux/Mac:
+  python -m pip install --upgrade pip
+  
+  Watch for:
+    Successfully installed pip-23.0
+
+
+================================================================================
+PART 5: DEPENDENCY INSTALLATION & VERIFICATION
+================================================================================
+
+STEP 5.1: Install All Dependencies
+═══════════════════════════════════
+
+Ensure virtual environment is activated first!
+
+Navigate to project:
+  cd C:\Users\mohit\Desktop\reiqamodified\burner-reiqamodified
+
+Install requirements:
+  python -m pip install -r requirements.txt
+  
+  This installs:
+    ✓ torch 1.13.0+
+    ✓ torchvision 0.14.0+
+    ✓ tensorboard 2.14.0+
+    ✓ numpy
+    ✓ pandas
+    ✓ pillow
+    ✓ scikit-learn
+    ✓ scikit-image
+    ✓ scipy
+    ✓ tqdm
+    ✓ opencv-python
+    ✓ matplotlib
+  
+  Monitor installation:
+    Watch for "Successfully installed" messages
+    No error messages should appear
+
+STEP 5.2: Handle CUDA-Specific Installation (If needed)
+═════════════════════════════════════════════════════════
+
+If you have GPU and CUDA but pip doesn't detect it:
+
+Option 1: Install GPU PyTorch (Recommended)
+  
+  For CUDA 11.8:
+    python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+  
+  For CUDA 12.1:
+    python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+  
+  For CPU only (no GPU):
+    python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+Option 2: Check CUDA version first
+  
+  Windows/Linux:
+    nvidia-smi
+    
+    Look for "CUDA Version" line
+    Match to latest PyTorch support at https://pytorch.org
+
+Option 3: Then install requirements
+  
+  After installing torch, install rest:
+    python -m pip install -r requirements.txt
+
+STEP 5.3: Verify All Dependencies Are Installed
+════════════════════════════════════════════════
+
+Test each major dependency:
+
+1. PyTorch:
+   python -c "import torch; print(f'PyTorch: {torch.__version__}')"
+   Expected: PyTorch: 1.13.0 or higher
+
+2. TorchVision:
+   python -c "import torchvision; print(f'TorchVision: {torchvision.__version__}')"
+   Expected: TorchVision: 0.14.0 or higher
+
+3. NumPy:
+   python -c "import numpy; print(f'NumPy: {numpy.__version__}')"
+   Expected: NumPy: 1.20.0 or higher
+
+4. Pandas:
+   python -c "import pandas; print(f'Pandas: {pandas.__version__}')"
+   Expected: Pandas: 1.0.0 or higher
+
+5. Pillow:
+   python -c "from PIL import Image; print('Pillow: OK')"
+   Expected: Pillow: OK
+
+6. scikit-learn:
+   python -c "import sklearn; print(f'scikit-learn: {sklearn.__version__}')"
+   Expected: scikit-learn: 1.0.0 or higher
+
+7. scikit-image:
+   python -c "import skimage; print(f'scikit-image: {skimage.__version__}')"
+   Expected: scikit-image: 0.18.0 or higher
+
+8. CUDA availability:
+   python -c "import torch; print(f'CUDA Available: {torch.cuda.is_available()}')"
+   Expected: CUDA Available: True (if GPU present)
+
+STEP 5.4: Create Requirements Check Script
+═══════════════════════════════════════════
+
+Create file: check_dependencies.py
+
+```python
+import sys
+
+def check_package(package_name, min_version=None):
+    try:
+        module = __import__(package_name)
+        version = getattr(module, '__version__', 'Unknown')
+        status = "✓ OK"
+        if min_version and version != 'Unknown':
+            if version < min_version:
+                status = "⚠ Outdated"
+        print(f"{package_name:20} {version:15} {status}")
+        return True
+    except ImportError:
+        print(f"{package_name:20} {'NOT INSTALLED':15} ✗ MISSING")
+        return False
+
+print("=" * 60)
+print("DEPENDENCY CHECK")
+print("=" * 60)
+
+packages = [
+    'torch',
+    'torchvision',
+    'numpy',
+    'pandas',
+    'PIL',
+    'sklearn',
+    'skimage',
+    'scipy',
+    'opencv',
+    'matplotlib',
+]
+
+all_ok = True
+for pkg in packages:
+    if not check_package(pkg):
+        all_ok = False
+
+print("=" * 60)
+import torch
+print(f"CUDA Available: {torch.cuda.is_available()}")
+if torch.cuda.is_available():
+    print(f"GPU Name: {torch.cuda.get_device_name(0)}")
+    print(f"CUDA Version: {torch.version.cuda}")
+print("=" * 60)
+
+if all_ok and torch.cuda.is_available():
+    print("✓ ALL DEPENDENCIES OK - READY TO TRAIN")
+    sys.exit(0)
+else:
+    print("✗ SOME ISSUES DETECTED - FIX ABOVE")
+    sys.exit(1)
+```
+
+Run check:
+  python check_dependencies.py
+
+STEP 5.5: Fix Specific Dependency Issues
+─────────────────────────────────────────
+
+Issue: ModuleNotFoundError: No module named 'X'
+
+Solution:
+  python -m pip install X
+  
+  Examples:
+    python -m pip install torch
+    python -m pip install scikit-image
+    python -m pip install opencv-python
+
+Issue: Version conflict (e.g., numpy 1.19 but need 1.20+)
+
+Solution:
+  python -m pip install --upgrade X
+  
+  Example:
+    python -m pip install --upgrade numpy
+
+Issue: "Could not find a version that satisfies the requirement"
+
+Solution:
+  1. Check spelling (e.g., 'PIL' not 'pillow' for import)
+  2. List what's installed:
+     python -m pip list
+  3. Reinstall from requirements.txt
+
+Issue: Permission denied (Linux/Mac)
+
+Solution:
+  Use: python -m pip install --user -r requirements.txt
+
+
+================================================================================
+PART 6: MODEL INITIALIZATION
+================================================================================
+
+STEP 6.1: Verify Project Structure
+═══════════════════════════════════
+
+Before initializing, check folders exist:
+
+Windows (PowerShell):
+  ls -Force
+  
+  Should show:
+    .venv/                    ← Virtual environment
+    datasets/                 ← Dataset code
+    learning/                 ← Training code
+    moco/                     ← MoCo implementation
+    networks/                 ← Model architectures
+    memory/                   ← Memory bank
+    options/                  ← Configuration
+    csv_files/                ← CSV data
+    main_contrast.py          ← Training script
+    requirements.txt          ← Dependencies
+
+Linux/Mac:
+  ls -la
+  
+  Same structure
+
+STEP 6.2: Create Required Directories
+══════════════════════════════════════
+
+If missing, create data directories:
+
+Windows (PowerShell):
+  mkdir -Force data
+  mkdir -Force data\train
+  mkdir -Force data\val
+  mkdir -Force save_dir
+  mkdir -Force tb_logger
+
+Linux/Mac:
+  mkdir -p data/train
+  mkdir -p data/val
+  mkdir -p save_dir
+  mkdir -p tb_logger
+
+STEP 6.3: Prepare CSV File
+═══════════════════════════
+
+CSV format required: Image_path
+
+Create: csv_files/moco_train.csv
+
+Content (example):
+  Image_path
+  /path/to/image1.jpg
+  /path/to/image2.jpg
+  /path/to/image3.jpg
+  ...
+
+Methods to create:
+
+Option 1: Manual in Excel
+  1. Open Excel
+  2. Create column: "Image_path"
+  3. Add image paths (one per row)
+  4. Save as CSV (Image_path,)
+
+Option 2: Command line (Windows PowerShell)
+  
+  Create images list:
+    Get-ChildItem data\train\*.jpg | Select-Object FullName | Export-Csv -Path csv_files/moco_train.csv -NoTypeInformation
+  
+  Edit header to just "Image_path" if csv_files/moco_train.csv shows extra columns
+
+Option 3: Python script
+  
+  Create: prepare_csv.py
+  
+  ```python
+  import os
+  import pandas as pd
+  
+  image_dir = 'data/train'
+  images = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith(('.jpg', '.png'))]
+  
+  df = pd.DataFrame({'Image_path': images})
+  df.to_csv('csv_files/moco_train.csv', index=False)
+  print(f"Created CSV with {len(images)} images")
+  ```
+  
+  Run:
+    python prepare_csv.py
+
+STEP 6.4: Test Model Initialization Script
+════════════════════════════════════════════
+
+Create: test_init.py
+
+```python
+import torch
+import os
+from options.train_options import TrainOptions
+from networks.build_backbone import build_model
+
+print("=" * 60)
+print("MODEL INITIALIZATION TEST")
+print("=" * 60)
+
+try:
+    print("✓ Step 1: Parse options...")
+    args = TrainOptions().parse()
+    print(f"  Batch size: {args.batch_size}")
+    print(f"  Epochs: {args.epochs}")
+    print(f"  Learning rate: {args.learning_rate}")
+    
+    print("✓ Step 2: Build model...")
+    model, model_ema = build_model(args)
+    print(f"  Model: {type(model).__name__}")
+    print(f"  Model EMA: {type(model_ema).__name__}")
+    
+    print("✓ Step 3: Count parameters...")
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"  Total parameters: {total_params:,}")
+    print(f"  Trainable parameters: {trainable_params:,}")
+    
+    print("✓ Step 4: Test forward pass...")
+    if torch.cuda.is_available():
+        print("  Using GPU...")
+        model = model.cuda()
+        dummy_input = torch.randn(4, 3, 224, 224).cuda()
+    else:
+        print("  Using CPU (GPU not available)...")
+        dummy_input = torch.randn(4, 3, 224, 224)
+    
+    with torch.no_grad():
+        output = model(dummy_input, mode=0)
+    
+    print(f"  Input shape: {dummy_input.shape}")
+    print(f"  Output shape: {output.shape}")
+    
+    print("✓ Step 5: Check GPU availability...")
+    print(f"  CUDA available: {torch.cuda.is_available()}")
+    if torch.cuda.is_available():
+        print(f"  GPU: {torch.cuda.get_device_name(0)}")
+        print(f"  GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+    
+    print("\n" + "=" * 60)
+    print("✓ ALL INITIALIZATION TESTS PASSED!")
+    print("=" * 60)
+    
+except Exception as e:
+    print(f"\n✗ ERROR during initialization: {str(e)}")
+    print("=" * 60)
+    import traceback
+    traceback.print_exc()
+```
+
+Run test:
+  python test_init.py
+
+STEP 6.5: Initialize Model for Training
+═════════════════════════════════════════
+
+Create: init_training.py
+
+```python
+import torch
+import torch.nn as nn
+from options.train_options import TrainOptions
+from learning.contrast_trainer import ContrastTrainer
+from networks.build_backbone import build_model
+from datasets.util import build_contrast_loader
+from memory.build_memory import build_mem
+import moco.optimizer
+
+print("=" * 80)
+print("INITIALIZING TRAINING COMPONENTS")
+print("=" * 80)
+
+# Step 1: Parse arguments
+print("\n[1/7] Parsing arguments...")
+args = TrainOptions().parse()
+print(f"  ✓ Batch size: {args.batch_size}")
+print(f"  ✓ Epochs: {args.epochs}")
+print(f"  ✓ Learning rate: {args.learning_rate}")
+print(f"  ✓ CSV path: {args.csv_path}")
+
+# Step 2: Build models
+print("\n[2/7] Building models...")
+model, model_ema = build_model(args)
+print(f"  ✓ Model built")
+print(f"  ✓ Momentum encoder built")
+
+# Step 3: Build dataset
+print("\n[3/7] Building dataset...")
+try:
+    train_dataset, train_loader, train_sampler = \
+        build_contrast_loader(args, ngpus_per_node=1)
+    print(f"  ✓ Dataset size: {len(train_dataset)} images")
+    print(f"  ✓ DataLoader created (batch size {args.batch_size})")
+except FileNotFoundError:
+    print(f"  ✗ ERROR: CSV not found at {args.csv_path}")
+    print(f"    Please create: {args.csv_path}")
+    exit(1)
+
+# Step 4: Build memory bank
+print("\n[4/7] Building memory bank...")
+contrast = build_mem(args, len(train_dataset))
+print(f"  ✓ Memory queue size: 65,536")
+
+# Step 5: Create loss and optimizer
+print("\n[5/7] Creating loss and optimizer...")
+criterion = nn.CrossEntropyLoss()
+if args.optimizer == "SGD":
+    optimizer = torch.optim.SGD(
+        model.parameters(),
+        lr=args.learning_rate,
+        momentum=args.momentum,
+        weight_decay=args.weight_decay
+    )
+elif args.optimizer == "AdamW":
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=args.learning_rate,
+        weight_decay=args.weight_decay
+    )
+else:
+    optimizer = torch.optim.SGD(
+        model.parameters(),
+        lr=args.learning_rate,
+        momentum=args.momentum,
+        weight_decay=args.weight_decay
+    )
+print(f"  ✓ Loss: CrossEntropyLoss")
+print(f"  ✓ Optimizer: {args.optimizer}")
+
+# Step 6: Move to GPU if available
+print("\n[6/7] GPU setup...")
+if torch.cuda.is_available():
+    print(f"  ✓ GPU available: {torch.cuda.get_device_name(0)}")
+    model = model.cuda()
+    model_ema = model_ema.cuda()
+    contrast = contrast.cuda()
+    criterion = criterion.cuda()
+    print(f"  ✓ Models moved to GPU")
+else:
+    print(f"  ✗ GPU NOT available - using CPU (training will be slow)")
+    print(f"    Install CUDA drivers and PyTorch with CUDA support")
+
+# Step 7: Test first batch
+print("\n[7/7] Testing first batch...")
+try:
+    for batch_idx, (images, indices) in enumerate(train_loader):
+        print(f"  ✓ Batch {batch_idx + 1} loaded")
+        print(f"    Images shape: {images.shape}")
+        print(f"    Indices shape: {indices.shape}")
+        
+        if torch.cuda.is_available():
+            images = images.cuda()
+            indices = indices.cuda()
+        
+        # Test forward pass
+        x1, x2 = torch.split(images, [args.batch_size, args.batch_size])
+        with torch.no_grad():
+            q1 = model(x1, mode=0)
+            k1 = model_ema(x1, mode=0)
+        
+        print(f"  ✓ Forward pass successful")
+        print(f"    Query output shape: {q1.shape}")
+        print(f"    Key output shape: {k1.shape}")
+        
+        print("\n" + "=" * 80)
+        print("✓ ALL TRAINING COMPONENTS INITIALIZED SUCCESSFULLY!")
+        print("=" * 80)
+        print("\nYou can now run:")
+        print("  python main_contrast.py --batch_size 128 --epochs 200 --csv_path csv_files/moco_train.csv")
+        break
+
+except Exception as e:
+    print(f"  ✗ ERROR: {str(e)}")
+    import traceback
+    traceback.print_exc()
+```
+
+Run initialization:
+  python init_training.py
+
+
+================================================================================
+PART 7: COMPLETE TROUBLESHOOTING GUIDE
+================================================================================
+
+ISSUE 1: "ModuleNotFoundError: No module named 'torch'"
+════════════════════════════════════════════════════════
+
+Cause: PyTorch not installed or virtual environment not activated
+
+Solution:
+  1. Activate virtual environment:
+     Windows: .\.venv\Scripts\Activate.ps1
+     Linux/Mac: source .venv/bin/activate
+  
+  2. Reinstall PyTorch:
+     python -m pip install torch torchvision torchaudio
+  
+  3. Verify:
+     python -c "import torch; print(torch.__version__)"
+
+ISSUE 2: "CUDA out of memory"
+══════════════════════════════
+
+Cause: GPU memory too small for batch size
+
+Solution:
+  1. Reduce batch size:
+     python main_contrast.py --batch_size 64  (instead of 128)
+  
+  2. Reduce model size:
+     python main_contrast.py --arch resnet50 --feat_dim 128
+  
+  3. Enable gradient accumulation (in code):
+     Accumulate 4 batches before update
+  
+  4. Check GPU memory usage:
+     nvidia-smi
+     Watch for memory growth
+
+ISSUE 3: "FileNotFoundError: csv_files/moco_train.csv"
+═════════════════════════════════════════════════════
+
+Cause: CSV file doesn't exist
+
+Solution:
+  1. Create CSV file with image paths
+  2. See Step 6.3 for CSV creation
+  3. Verify file exists:
+     Windows: Test-Path csv_files/moco_train.csv
+     Linux/Mac: test -f csv_files/moco_train.csv && echo "File exists"
+
+ISSUE 4: "No module named 'datasets'"
+══════════════════════════════════════
+
+Cause: Working directory not set correctly, or __init__.py missing
+
+Solution:
+  1. Check current directory:
+     python -c "import os; print(os.getcwd())"
+     
+     Should be: C:\Users\...\burner-reiqamodified
+  
+  2. Verify __init__.py files exist:
+     Windows (PowerShell):
+       Test-Path datasets/__init__.py
+       Test-Path moco/__init__.py
+       Test-Path networks/__init__.py
+     
+     Linux/Mac:
+       ls datasets/__init__.py
+       ls moco/__init__.py
+  
+  3. If missing, create empty files:
+     Windows (PowerShell):
+       New-Item -ItemType File datasets/__init__.py
+       New-Item -ItemType File moco/__init__.py
+       New-Item -ItemType File networks/__init__.py
+       New-Item -ItemType File learning/__init__.py
+       New-Item -ItemType File memory/__init__.py
+       New-Item -ItemType File options/__init__.py
+
+ISSUE 5: "torch.cuda.is_available() returns False"
+──────────────────────────────────────────────────
+
+Cause: GPU drivers or CUDA not installed
+
+Solution:
+  1. Check nvidia-smi:
+     nvidia-smi
+     
+     If "command not found":
+       Install NVIDIA GPU drivers (see Part 3, Step 3.7)
+  
+  2. Check CUDA installation:
+     nvcc --version
+     
+     If "command not found":
+       Install CUDA Toolkit (see Part 3, Step 3.8)
+  
+  3. Reinstall PyTorch with GPU support:
+     python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+  
+  4. Verify:
+     python -c "import torch; print(torch.cuda.is_available())"
+
+ISSUE 6: "OSError: image file is truncated"
+════────────────────────────────────────
+
+Cause: Corrupted image files in dataset
+
+Solution:
+  1. Enable truncated image loading (already in code)
+  2. Check image files:
+     python -c "from PIL import Image; Image.open('path/image.jpg')"
+  
+  3. Remove corrupted images from csv_files/moco_train.csv
+
+ISSUE 7: "RuntimeError: Expected all tensors to be on GPU"
+───────────────────────────────────────────────────────────
+
+Cause: Mixed GPU/CPU tensors
+
+Solution:
+  1. Ensure model is on same device as input:
+     if torch.cuda.is_available():
+         model = model.cuda()
+         input_tensor = input_tensor.cuda()
+  
+  2. Check in main_contrast.py around training loop
+
+ISSUE 8: "torch.distributed.DistributedDataParallel: process ... hung up"
+────────────────────────────────────────────────────────────────────────
+
+Cause: DDP synchronization issue
+
+Solution:
+  1. Check all GPUs have same Python version
+  2. Reduce num_workers:
+     python main_contrast.py --num_workers 2
+  
+  3. Set NCCL timeout:
+     Windows: $env:NCCL_BLOCKING_WAIT = 1
+     Linux: export NCCL_BLOCKING_WAIT=1
+
+
+================================================================================
+PART 8: QUICK DIAGNOSTIC COMMANDS
+================================================================================
+
+CREATE: diagnose.py
+
+```python
+#!/usr/bin/env python
+import sys
+import platform
+
+print("\n" + "=" * 80)
+print("RE-IQA SYSTEM DIAGNOSTIC")
+print("=" * 80)
+
+# System info
+print("\n[SYSTEM INFO]")
+print(f"OS: {platform.system()} {platform.release()}")
+print(f"Python: {sys.version.split()[0]}")
+print(f"Executable: {sys.executable}")
+
+# Check directories
+print("\n[PROJECT STRUCTURE]")
+import os
+required_dirs = ['datasets', 'moco', 'networks', 'learning', 'memory', 'options']
+for d in required_dirs:
+    exists = "✓" if os.path.isdir(d) else "✗"
+    print(f"{exists} {d}/")
+
+# Check imports
+print("\n[PYTHON PACKAGES]")
+packages = {
+    'torch': 'PyTorch',
+    'torchvision': 'TorchVision',
+    'numpy': 'NumPy',
+    'pandas': 'Pandas',
+    'PIL': 'Pillow',
+    'sklearn': 'scikit-learn',
+    'skimage': 'scikit-image',
+}
+
+for pkg, name in packages.items():
+    try:
+        module = __import__(pkg)
+        version = getattr(module, '__version__', 'Unknown')
+        print(f"✓ {name:20} {version}")
+    except ImportError:
+        print(f"✗ {name:20} NOT INSTALLED")
+
+# GPU check
+print("\n[GPU/CUDA]")
+try:
+    import torch
+    cuda_available = torch.cuda.is_available()
+    if cuda_available:
+        print(f"✓ CUDA available")
+        print(f"  Device: {torch.cuda.get_device_name(0)}")
+        print(f"  Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+        print(f"  CUDA Version: {torch.version.cuda}")
+    else:
+        print(f"✗ CUDA NOT available (CPU only)")
+except Exception as e:
+    print(f"✗ GPU check failed: {e}")
+
+# CSV check
+print("\n[DATA FILES]")
+import os
+if os.path.exists('csv_files/moco_train.csv'):
+    with open('csv_files/moco_train.csv') as f:
+        lines = len(f.readlines())
+    print(f"✓ CSV file exists ({lines-1} images)")
+else:
+    print(f"✗ CSV file NOT found at csv_files/moco_train.csv")
+
+print("\n" + "=" * 80)
+print("END OF DIAGNOSTIC")
+print("=" * 80 + "\n")
+```
+
+Run diagnostic:
+  python diagnose.py
+
+
+================================================================================
+QUICK COMMAND REFERENCE
+================================================================================
+
+Setup:
+  python -m venv .venv                    # Create environment
+  .\.venv\Scripts\Activate.ps1           # Activate (Windows)
+  source .venv/bin/activate              # Activate (Linux/Mac)
+  python -m pip install -r requirements.txt  # Install deps
+
+Check:
+  python -c "import torch; print(torch.cuda.is_available())"   # GPU check
+  nvidia-smi                             # GPU status
+  python diagnose.py                     # Full diagnostic
+
+Test:
+  python test_init.py                    # Model init test
+  python init_training.py                # Training setup test
+
+Train:
+  python main_contrast.py --batch_size 128 --epochs 200 \
+    --csv_path csv_files/moco_train.csv --data_folder data
+
+================================================================================
+END OF SETUP AND TROUBLESHOOTING GUIDE
+================================================================================

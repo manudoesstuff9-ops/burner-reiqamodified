@@ -1,0 +1,14 @@
+torch>=1.13.0
+torchvision>=0.14.0
+numpy>=1.24.2
+scipy>=1.11.0
+scikit-image>=0.19.3
+scikit-learn>=1.3.0
+pillow>=9.0,<13.0
+tensorboard>=2.14.0
+tensorboard_logger
+matplotlib
+seaborn
+h5py
+six
+tqdm

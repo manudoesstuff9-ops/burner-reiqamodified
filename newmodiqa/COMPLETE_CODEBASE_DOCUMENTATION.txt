@@ -1,0 +1,1710 @@
+================================================================================
+RE-IQA CODEBASE COMPLETE DOCUMENTATION
+Image Quality Assessment with Momentum Contrast Learning
+================================================================================
+
+TABLE OF CONTENTS:
+1. Project Overview & Architecture
+2. Key Concepts Explained
+3. File Structure & Purpose
+4. Detailed Function Explanations
+5. Code Flow Diagrams
+6. Data Pipeline Explanation
+7. Training Loop Walkthrough
+8. Feature Extraction Walkthrough
+
+================================================================================
+SECTION 1: PROJECT OVERVIEW & ARCHITECTURE
+================================================================================
+
+PROJECT NAME: Re-IQA (Quality-Aware Contrastive Learning for IQA)
+
+GOAL: Learn image quality-aware embeddings using contrastive learning without
+      manually labeled quality scores. The system learns from image distortions
+      to understand quality degradation patterns.
+
+CORE IDEAS:
+-----------
+1. MOMENTUM CONTRAST (MoCo)
+   - Uses a momentum encoder that lags behind the main encoder
+   - Maintains a large memory bank of negative samples
+   - Enables high-quality contrastive learning without huge batch sizes
+
+2. QUALITY-AWARE CONTRASTIVE LEARNING
+   - Apply 26 different distortion types to images
+   - Learn that two views of same image are similar (positive pair)
+   - Learn that views of different images are different (negative pairs)
+   - Distortion-aware augmentation teaches the model about quality
+
+3. VARIANTS
+   - Standard MoCo: Single head on top of ResNet50
+   - Multi-Distortion Encoder (MDE): 26 specialist heads (one per distortion)
+     + Gating network to choose best head per input
+     + More interpretable: each head specializes in one distortion type
+
+KEY INSIGHT:
+============
+Images with severe distortions should be far from high-quality images in
+the learned embedding space. By using distortion-based augmentation paired
+with contrastive learning, the model learns a quality manifold without
+explicit quality labels.
+
+================================================================================
+SECTION 2: KEY CONCEPTS EXPLAINED
+================================================================================
+
+CONCEPT 1: CONTRASTIVE LEARNING
+────────────────────────────────
+What: Learn embeddings by pulling similar samples closer and pushing 
+      dissimilar samples apart.
+
+How:
+  1. Take an image
+  2. Create two different augmented views (view1, view2)
+  3. Pass through encoder → embeddings (e1, e2)
+  4. These are a "positive pair" (same image, different augmentations)
+  5. Use a queue of embeddings from other images as "negative pairs"
+  6. Loss: Make e1 and e2 similar, e1 far from negatives
+
+Formula: InfoNCE(query, key) = -log[ exp(sim(q,k)/T) / ∑ exp(sim(q,n)/T) ]
+  where sim() = cosine similarity, T = temperature parameter
+
+
+CONCEPT 2: MOMENTUM CONTRAST (MoCo)
+───────────────────────────────────
+Problem: Regular contrastive learning needs huge batch sizes for good negatives
+Solution: Use a slow-moving "momentum" copy of the encoder
+
+How:
+  • Main encoder: Updates every gradient step (normal backprop)
+  • Momentum encoder: Updates slowly using exponential moving average (EMA)
+  • maintain_rate = 0.999
+  • momentum_encoder_params = momentum_encoder_params * 0.999 + main_encoder * 0.001
+
+Benefit: Memory bank can be 65,536 samples! Large queue = stable training
+
+
+CONCEPT 3: MEMORY BANK
+──────────────────────
+What: Queue of embeddings from previous batches
+
+Why: To have diverse negative samples beyond current batch.
+     Without it, only batch_size negatives available.
+     With it, 65,536  negatives available. Much better!
+
+How it works:
+  1. Momentum encoder generates keys (embeddings)
+  2. Keys get added to queue
+  3. Oldest keys fall off end of queue (FIFO)
+  4. Queue always has same size: 65,536 entries
+
+
+CONCEPT 4: QUALITY-AWARE AUGMENTATION
+──────────────────────────────────────
+Standard MoCo uses crops + color jitter + blur.
+
+Re-IQA adds: 26 DISTORTION TYPES
+  - Gaussian blur, lens blur (optics)
+  - Color shifts, saturation (color)
+  - JPEG compression (lossy compression)
+  - Gaussian, impulse, rain noise (noise)
+  - Weather effects: haze, rain, snow
+  - SIFT, jitter, pixelation, sharpening
+  - And many more...
+
+Result: Two augmented views might have DIFFERENT distortions!
+        The model learns: "These have different distortions but same content"
+        This creates QUALITY-AWARE embeddings
+
+
+CONCEPT 5: MULTI-DISTORTION ENCODER (MDE) VARIANT
+──────────────────────────────────────────────────
+Advanced variant with specialized heads:
+
+Each distortion type gets its own expert head:
+  ResNet backbone → [26 specialist heads]
+  
+Gating network learns: "Which head should I use for this image?"
+  • Image with Gaussian blur → Use blur-specialist head
+  • Image with JPEG artifacts → Use JPEG-specialist head
+  
+Benefit: More interpretable, each head specializes in one degradation pattern
+
+================================================================================
+SECTION 3: FILE STRUCTURE & PURPOSE
+================================================================================
+
+ROOT DIRECTORY STRUCTURE:
+═════════════════════════
+
+burner-reiqamodified/
+│
+├── MAIN TRAINING SCRIPTS
+│   ├── main_contrast.py              ← Standard MoCo training
+│   ├── main_contrast_mde.py          ← Multi-Distortion Encoder training
+│   ├── demo_quality_aware_feats.py   ← Extract features (quality-aware)
+│   ├── demo_content_aware_feats.py   ← Extract features (content-aware)
+│   └── demo_quality_aware_feats_mde.py ← Extract features (MDE variant)
+│
+├── CONFIGURATION
+│   ├── options/
+│   │   ├── base_options.py           ← Shared argument parser
+│   │   ├── train_options.py          ← Training-specific arguments
+│   │   └── test_options.py           ← Testing-specific arguments
+│   └── requirements.txt              ← Python dependencies
+│
+├── DATASETS & AUGMENTATION
+│   └── datasets/
+│       ├── dataset.py                ← IQAImageClass: loads images with 26 distortions
+│       ├── iqa_distortions.py        ← 26 distortion functions (blur, noise, etc.)
+│       ├── RandAugment.py            ← Random augmentation (optional)
+│       └── util.py                   ← Dataset utilities (transforms, loaders)
+│
+├── NEURAL NETWORK MODELS
+│   └── networks/
+│       ├── resnet.py                 ← ResNet backbone (50/101/152)
+│       ├── build_backbone.py         ← Model builders (single/multi-head)
+│       ├── build_linear.py           ← Linear evaluation model
+│       ├── util.py                   ← Normalize, utility layers
+│       ├── resnest.py                ← ResNeSt variant
+│       ├── resnet_cmc.py             ← CMC variant (cross-modal)
+│       └── multi_distortion_encoder.py ← MDE: 26 specialist heads + gating
+│
+├── CONTRASTIVE LEARNING (MoCo)
+│   └── moco/
+│       ├── builder.py                ← MoCo class: assembles model architecture
+│       ├── builder_mde.py            ← MoCo-MDE: variant with specialist heads
+│       ├── losses.py                 ← InfoNCE loss + Manifold triplet loss
+│       ├── optimizer.py              ← Learning rate scheduling (LARS, cosine)
+│       ├── distortion_augmentations.py ← Runtime distortion application
+│       └── loader.py                 ← Data loading utilities
+│
+├── TRAINING FRAMEWORK
+│   └── learning/
+│       ├── base_trainer.py           ← BaseTrainer: DDP setup, checkpointing
+│       ├── contrast_trainer.py       ← ContrastTrainer: MoCo pre-training loop
+│       ├── linear_trainer.py         ← LinearTrainer: downstream evaluation
+│       └── util.py                   ← AverageMeter, helper functions
+│
+├── MEMORY MANAGEMENT
+│   └── memory/
+│       ├── mem_bank.py               ← Memory bank: FIFO queue of embeddings
+│       ├── mem_moco.py               ← MoCo-specific memory management
+│       ├── alias_multinomial.py      ← Efficient sampling from queue
+│       └── build_memory.py           ← Factory to create memory bank
+│
+├── DATA
+│   ├── csv_files/moco_train.csv      ← List of training images + paths
+│   └── sample_images/                ← Test images for demos
+│
+├── OUTPUT
+│   ├── save_dir/                     ← Trained models, logs, checkpoints
+│   └── tb_logger/                    ← TensorBoard logs
+│
+└── DOCUMENTATION
+    ├── README.md                     ← Project overview
+    ├── CODE_REFERENCES.md            ← Old code documentation
+    ├── CODE_CLEANUP_SUMMARY.md       ← Bug fixes applied
+    └── newmodiqa/                    ← Clean copy of entire codebase
+
+================================================================================
+SECTION 4: DETAILED FILE EXPLANATIONS
+================================================================================
+
+FILE 1: main_contrast.py (DDP Training Entry Point)
+═══════════════════════════════════════════════════
+
+PURPOSE:
+Training script for MoCo pre-training using Distributed Data Parallel (DDP).
+Launches training on one or multiple GPUs.
+
+KEY FUNCTIONS:
+
+1) main()
+   ───────
+   WHAT: Entry point for training
+   WORKFLOW:
+     a. Parse command-line arguments
+     b. Detect number of GPUs
+     c. Launch training on all GPUs using mp.spawn()
+   CALLS: main_worker() on each GPU
+
+2) main_worker(gpu, ngpus_per_node, args)
+   ───────────────────────────────────────
+   WHAT: Training loop on a single GPU
+   
+   STEP-BY-STEP PROCESS:
+   
+   Step 1: Initialize trainer
+     trainer = ContrastTrainer(args)
+     trainer.init_ddp_environment(gpu, ngpus_per_node)
+     └─ Sets up PyTorch DDP: communicates between GPUs
+   
+   Step 2: Build model
+     model, model_ema = build_model(args)
+     └─ Creates encoder + momentum encoder
+     └─ model: Main encoder (updates via gradient)
+     └─ model_ema: Momentum encoder (updates via EMA)
+   
+   Step 3: Build dataset and loader
+     train_dataset, train_loader, train_sampler = build_contrast_loader()
+     └─ Loads CSV file with image paths
+     └─ Creates IQAImageClass with 26 distortions
+     └─ Returns DataLoader with proper DDP sampling
+   
+   Step 4: Build memory bank
+     contrast = build_mem(args, len(train_dataset))
+     └─ Creates queue of embeddings (size: 65,536)
+     └─ This is the "memory bank" for contrastive learning
+   
+   Step 5: Create loss function
+     criterion = nn.CrossEntropyLoss()
+     └─ Standard cross-entropy loss for InfoNCE
+   
+   Step 6: Create optimizer (Choose one)
+     - SGD: Standard stochastic gradient descent
+     - AdamW: Adam with decoupled weight decay
+     - LARS: Layer-wise Adaptive Rate Scaling (for large batches)
+   
+   Step 7: Wrap models with DDP and AMP (mixed precision)
+     model, model_ema, optimizer = trainer.wrap_up()
+     └─ Converts to DistributedDataParallel
+     └─ Optional: Automatic Mixed Precision for speed
+   
+   Step 8: Broadcast memory across GPUs
+     trainer.broadcast_memory(contrast)
+     └─ All GPUs start with same memory bank
+   
+   Step 9: Resume from checkpoint if exists
+     start_epoch = trainer.resume_model(...)
+     └─ Loads model, model_ema, memory bank, optimizer state
+   
+   Step 10: Initialize logging
+     trainer.init_tensorboard_logger()
+     └─ Sets up TensorBoard for visualization
+   
+   Step 11: Training loop
+     FOR each epoch from start_epoch to total_epochs:
+       a. Set sampler epoch (for proper data shuffling)
+       b. Adjust learning rate (cosine decay or warmup)
+       c. Run trainer.train() for one epoch
+       d. Log metrics to TensorBoard
+       e. Save checkpoint
+     
+   OUTPUTS:
+   - Trained model weights
+   - TensorBoard logs
+   - Checkpoints every N epochs
+
+
+FILE 2: datasets/dataset.py (Dataset Implementation)
+════════════════════════════════════════════════════
+
+PURPOSE:
+Implements the IQAImageClass dataset that applies quality-aware augmentations
+(26 distortion types) to images for contrastive learning.
+
+KEY CLASSES:
+
+1) ImageFolderInstance(datasets.ImageFolder)
+   ─────────────────────────────────────────
+   PURPOSE: Load images from folder structure
+   USE CASE: Standard ImageNet-style training (not used in Re-IQA)
+   
+   KEY METHOD:
+   - __getitem__(index): Returns (image_tensor, index, [optional jigsaw])
+
+
+2) IQAImageClass(data.Dataset)
+   ───────────────────────────
+   PURPOSE: Main dataset for Re-IQA training with 26 distortions
+   
+   __init__(csv_path, n_aug=7, n_scale=1, n_distortions=1, 
+            patch_size=224, swap_crops=1)
+   ────────────────────────────────────────────────────────
+   PARAMETERS:
+     • csv_path: Path to CSV with image paths (format: "Image_path,label")
+     • n_aug: Number of augmented views per image (typically 2)
+     • n_scale: Number of scales (typically 1)
+     • n_distortions: Which distortions to use (1-26)
+     • patch_size: Crop size (default 224 for ResNet)
+     • swap_crops: Percentage overlap between patches (10-30%)
+   
+   INITIALIZATION WORKFLOW:
+     1. Read CSV file with pandas
+     2. Extract image paths into self.image_name
+     3. Store all parameters
+     4. Calculate self.swap = number of patches to swap
+     5. Set OLA (Overlapping Area) range: 10%-30%
+   
+   __len__()
+   ─────────
+   WHAT: Returns number of images in dataset
+   RETURNS: len(self.image_name)
+   
+   __getitem__(index)
+   ──────────────────
+   WHAT: Returns a pair of augmented images for one input image
+   
+   STEP-BY-STEP PROCESS:
+     
+     Step 1: Load original image
+     image = Image.open(self.image_name[index])
+     
+     Step 2: Create TWO independent crops from the same image
+     Different crops from same image = more data diversity
+     
+     Step 3: For each crop, apply a RANDOM DISTORTION
+     n_distortions = random choice from 1 to 26
+     Apply distortion at different severity levels
+     
+     Step 4: Create patch pairs with overlap
+     Call crop_with_patch_swap()
+     └─ Creates patches with controlled overlap (OLA = 10%-30%)
+     └─ Swaps some patches between view1 and view2
+     └─ Creates two view tensors: (batch_size, 3, H, W)
+     
+     Step 5: Return as positive pair
+     RETURNS: (view1_tensor, view2_tensor, index)
+   
+   RETURNS:
+     • view1: Tensor of shape [batch_size, 3, 224, 224]
+     • view2: Tensor of shape [batch_size, 3, 224, 224]
+     • index: Index for memory bank updates
+
+   iqa_transformations(choice, im, level)
+   ──────────────────────────────────────
+   WHAT: Applies one of 26 distortion types to an image
+   
+   PARAMETERS:
+     • choice: 1-26, which distortion to apply
+     • im: Input PIL image
+     • level: Severity level (0.0 to 1.0)
+   
+   MAPPINGS (choice → distortion):
+     1:  Gaussian Blur        (blurs image with Gaussian kernel)
+     2:  Lens Blur            (simulates camera lens defocus)
+     3:  Color Diffuse        (randomly shifts colors)
+     4:  Color Shift          (applies global color shift)
+     5:  Color Saturate       (modifies saturation)
+     6:  Saturate             (saturation modification)
+     7:  JPEG Compression     (lossy compression artifacts)
+     8:  Gaussian Noise       (adds random white noise)
+     9:  Impulse Noise        (salt-and-pepper noise)
+     10: Denoise              (applies denoising filter)
+     11: Brighten             (increases brightness)
+     12: Darken               (decreases brightness)
+     13: Mean Shift           (reduces color variations)
+     14: Resize Distortion    (upsampling artifacts)
+     15: Sharpen Hi-Freq      (edge enhancement)
+     16: Contrast Stretch     (increases contrast)
+     17: Color Block          (adds color blocks)
+     18: Pixelate             (reduces resolution)
+     19: Non-Eccentricity     (geometric distortion)
+     20: Jitter               (adds geometric noise)
+     21: Motion Blur          (simulates motion)
+     22: Interpolation (1)    (cubic interpolation artifacts)
+     23: Interpolation (2)    (linear interpolation artifacts)
+     24: Weather: Haze        (adds atmospheric haze)
+     25: Weather: Rain        (adds rain effect)
+     26: Weather: Snow        (adds snow effect)
+   
+   RETURNS: Modified PIL image
+
+   crop_with_patch_swap(image, patch_size, swap_crops, min_OLA, max_OLA)
+   ─────────────────────────────────────────────────────────────────
+   WHAT: Crops image into patches with controlled overlap and swaps between views
+   
+   ALGORITHM:
+     1. Calculate random OLA (overlapping area): between min_OLA and max_OLA
+        Example: 20% overlap means patches overlap by 20%
+     
+     2. Divide image into patches:
+        stride = patch_size * (1 - OLA)
+        Example: patch_size=224, OLA=20% → patches every 179 pixels
+        Patches overlap by 45 pixels each
+     
+     3. Create patch list for view1
+     
+     4. Create same patches for view2 (from same image)
+     
+     5. Swap_crops% of patches between view1 and view2
+        This creates diversity but maintains similarity (same image)
+     
+     6. Stack patches back into views
+        Overlapping regions averaged when stacked
+     
+     7. Return (view1_tensor, view2_tensor)
+   
+   RETURNS:
+     • view1_patches: Tensor [n_patches, 3, 224, 224]
+     • view2_patches: Tensor [n_patches, 3, 224, 224]
+
+
+FILE 3: datasets/iqa_distortions.py (26 Distortion Functions)
+═════════════════════════════════════════════════════════════
+
+PURPOSE:
+Contains implementations of all 26 image quality degradation/distortion types.
+Each function takes an image and severity level, returns degraded image.
+
+STRUCTURE:
+Each distortion function follows same pattern:
+
+def im<name>(im, level):
+    """Docstring"""
+    # im: PIL Image
+    # level: severity 0.0 (none) to 1.0 (severe)
+    # return: degraded PIL Image
+
+DISTORTION GROUPS:
+
+GROUP 1: BLUR (2 functions)
+  ├─ imblurgauss(im, level)
+  │  └─ Gaussian blur: convolves image with Gaussian kernel
+  │     σ = level * max_sigma → larger σ = blurrier
+  │
+  └─ imblurlens(im, level)
+     └─ Lens blur: simulates camera lens defocus
+        Creates realistic bokeh-like blur
+
+GROUP 2: COLOR (5 functions)
+  ├─ imcolordiffuse(im, level)
+  │  └─ Randomly shifts RGB channels
+  │
+  ├─ imcolorshift(im, level)
+  │  └─ Global color cast (e.g., too red, too blue)
+  │
+  ├─ imcolorsaturate(im, level)
+  │  └─ Modifies color saturation (vivid to grayscale)
+  │
+  ├─ imsaturate(im, level)
+  │  └─ Alternative saturation control
+  │
+  └─ imnoisegauss(im, level)
+     └─ Adds white Gaussian noise
+
+GROUP 3: NOISE (3 functions)
+  ├─ imnoisegauss(im, level)
+  │  └─ Random noise: σ = level * 70
+  │
+  ├─ imnoiseimpulse(im, level)
+  │  └─ Salt-and-pepper noise: flips random pixels
+  │
+  └─ imdenoise(im, level)
+     └─ Removes noise (inverse operation)
+
+GROUP 4: COMPRESSION (1 function)
+  └─ imcompressjpeg(im, level)
+     └─ JPEG lossy compression
+        quality = 100 - (level * 80) → 20% = QF 80, severe = QF 20
+
+GROUP 5: BRIGHTNESS (2 functions)
+  ├─ imbrighten(im, level)
+  │  └─ Increases brightness: B' = B * (1 + level * 2)
+  │
+  └─ imdarken(im, level)
+     └─ Decreases brightness: B' = B * (1 - level)
+
+GROUP 6: ADVANCED PROCESSING (5 functions)
+  ├─ immeanshift(im, level)
+  │  └─ Reduces color variations (posterization effect)
+  │
+  ├─ imresizedist(im, level)
+  │  └─ Resize artifacts: downsample then upsample
+  │
+  ├─ imsharpenHi(im, level)
+  │  └─ Edge enhancement: highlights high frequencies
+  │
+  ├─ imcontrastc(im, level)
+  │  └─ Contrast stretching: expands histogram
+  │
+  └─ imcolorblock(im, level)
+     └─ Adds colored blocks (compression artifacts)
+
+GROUP 7: GEOMETRIC (3 functions)
+  ├─ impixelate(im, level)
+  │  └─ Pixelation: reduces resolution
+  │     block_size = ceil(level * 16)
+  │
+  ├─ imjitter(im, level)
+  │  └─ Random geometric noise: adds jitter to pixels
+  │
+  └─ imnoneccentricity(im, level)
+     └─ Geometric distortion around image center
+
+GROUP 8: MOTION (1 function)
+  └─ imblurmotion(im, level)
+     └─ Motion blur: simulates camera movement
+        kernel_size = ceil(level * 20)
+
+GROUP 9: INTERPOLATION (2 functions)
+  ├─ imresizedist1(im, level)
+  │  └─ Resize with cubic interpolation artifacts
+  │
+  └─ imresizedist2(im, level)
+     └─ Resize with linear interpolation artifacts
+
+EXAMPLE: How imblurgauss works
+───────────────────────────────
+Input: PIL Image, level = 0.5 (medium blur)
+1. Convert PIL to numpy array
+2. Calculate blur strength: σ = 0.5 * 10 = 5.0 pixels
+3. Create Gaussian kernel with σ = 5.0
+4. Convolve image with kernel (blur effect)
+5. Convert back to PIL Image
+Output: Blurred PIL Image
+
+
+FILE 4: moco/builder.py (MoCo Architecture)
+════════════════════════════════════════════
+
+PURPOSE:
+Defines the MoCo (Momentum Contrast) architecture:
+- Main encoder
+- Momentum encoder (slow-moving copy)
+- Projection heads
+- Contrastive loss computation
+
+CLASS: MoCo(nn.Module)
+════════════════════
+
+__init__(base_encoder, dim=256, mlp_dim=4096, T=1.0)
+──────────────────────────────────────────────────
+PURPOSE: Initialize MoCo model architecture
+
+PARAMETERS:
+  • base_encoder: ResNet class (e.g., ResNet50)
+  • dim: Output feature dimension (default: 256)
+  • mlp_dim: Hidden dimension in MLPs (default: 4096)
+  • T: Temperature parameter for softmax (default: 1.0)
+
+COMPONENTS CREATED:
+
+1) self.base_encoder
+   └─ Main encoder: Updated via backprop every iteration
+   └─ Takes image (3, 224, 224) → outputs mlp_dim features
+
+2) self.momentum_encoder
+   └─ Momentum encoder: Updated slowly via EMA
+   └─ Same architecture as base_encoder
+   └─ Initially copied from base_encoder
+   └─ Does NOT receive gradients (detached)
+
+3) Projection heads (built in _build_projector_and_predictor_mlps)
+   └─ MLP layer: mlp_dim → dim (linear projection)
+   └─ Applied to both encoders' outputs
+   └─ Creates normalized feature vectors
+
+INITIALIZATION SEQUENCE:
+  1. Create base_encoder
+  2. Create momentum_encoder (copy of base_encoder)
+  3. Copy parameters from base to momentum
+  4. Build projection MLPs
+  5. Set momentum_encoder.requires_grad = False (no gradient updates)
+
+_build_mlp(num_layers, input_dim, mlp_dim, output_dim, last_bn=True)
+────────────────────────────────────────────────────────────────
+PURPOSE: Build a multi-layer perceptron
+
+ARCHITECTURE:
+  layer0: Linear(input_dim → mlp_dim)
+  layer1: BatchNorm(mlp_dim)
+  layer2: ReLU()
+  ...
+  layerN-1: Linear(mlp_dim → output_dim)
+  [optional]: BatchNorm(output_dim)
+
+PARAMETERS:
+  • num_layers: Number of layers
+  • input_dim: Input feature dimension
+  • mlp_dim: Hidden dimension
+  • output_dim: Output dimension
+  • last_bn: Add final BatchNorm (follows SimCLR)
+
+RETURNS: nn.Sequential with MLP layers
+
+_update_momentum_encoder(m)
+──────────────────────────
+PURPOSE: Update momentum encoder using exponential moving average
+
+CONCEPT:
+  θ_momentum = m * θ_momentum + (1 - m) * θ_main
+  
+  Example with m = 0.999:
+  θ_momentum = 0.999 * θ_momentum + 0.001 * θ_main
+  
+  Momentum encoder changes very slowly (99.9% stays same, 0.1% updates)
+
+WHEN CALLED: After each training step
+
+WHY USE EMA:
+  - Prevents target distribution from changing too fast
+  - Creates more stable training
+  - Encoder sees slightly stale targets
+
+@torch.no_grad()
+Decorator: Disables gradient computation (no memory usage)
+
+contrastive_loss(q, k)
+──────────────────────
+PURPOSE: Compute InfoNCE (contrastive) loss
+
+INPUTS:
+  • q: Query embeddings [batch_size, dim] from base encoder
+  • k: Key embeddings [batch_size, dim] from momentum encoder
+
+STEPS:
+
+Step 1: Normalize embeddings (L2 normalization)
+  q = q / ||q||  (divide by euclidean norm)
+  k = k / ||k||
+  Result: All embeddings on unit hypersphere
+  Benefit: Makes cosine similarity = dot product
+
+Step 2: Gather keys from all GPUs (in distributed training)
+  k = concat_all_gather(k)
+  Purpose: Use keys from all GPUs, not just current GPU
+  Example: 2 GPUs with batch_size=128 each
+    GPU0 has k0 [128, 256]
+    GPU1 has k1 [128, 256]
+    All-gather: all GPUs get k [256, 256]
+
+Step 3: Compute similarity logits
+  logits = (q @ k.T) / T
+  = [batch_size, queue_size]
+  = einsum('nc,mc->nm', q, k)
+  
+  Element (i,j) = similarity(query_i, key_j)
+  Example: logits[42, 42] = similarity of matching pair
+           logits[42, other] = similarity to negative keys
+
+Step 4: Create labels for cross-entropy loss
+  labels[i] = i (each query i should match key i)
+  Reason: In distributed setting, adjust for rank:
+    labels = arange(N) + N * distributed_rank
+    GPU0: [0,1,2,...,127]
+    GPU1: [128,129,...,255]
+
+Step 5: Apply cross-entropy loss
+  loss = CrossEntropyLoss(logits, labels)
+  
+  What this does:
+    - For query 42, compute softmax over all keys
+    - Should assign highest probability to key 42
+    - Loss = -log(prob of correct match)
+
+Step 6: Temperature scaling
+  loss *= 2 * T
+  (For mathematical consistency with paper)
+
+RETURNS: Scalar loss value
+
+EQUATION FROM PAPER:
+  L = -log[ exp(sim(q,k+)/T) / (exp(sim(q,k+)/T) + ∑ exp(sim(q,k-_i)/T)) ]
+  
+  Interpretation:
+  - Numerator: similarity of matching pair
+  - Denominator: sum of all similarities (positive + all negatives)
+  - Log is monotonic: maximizing log ≈ maximizing similarity ratio
+
+
+FILE 5: moco/losses.py (Loss Functions)
+═══════════════════════════════════════
+
+PURPOSE:
+Defines all loss functions used during training:
+1. InfoNCE loss (contrastive)
+2. Manifold triplet loss (optional)
+3. Gating entropy loss (optional for MDE)
+
+CLASS: InfoNCELoss(nn.Module)
+─────────────────────────────
+
+forward(q, k, temperature=0.07)
+───────────────────────────────
+PURPOSE: Compute InfoNCE loss (identical to MoCo-v2)
+
+WORKFLOW:
+  1. Normalize query and key embeddings
+  2. Compute logits: sim(q, k) / temperature
+  3. Create positive pair labels
+  4. Apply cross-entropy loss
+  5. Return loss
+
+INTUITION:
+  For a query embedding q and key embedding k:
+  - They come from the same image (positive pair)
+  - Should be similar (high dot product)
+  - Should be different from all other keys (negatives)
+
+LOSS BEHAVIOR:
+  - High loss when positive pair far apart
+  - Low loss when positive pairs close, negatives far
+
+
+FILE 6: networks/build_backbone.py (Model Builders)
+════════════════════════════════════════════════════
+
+PURPOSE:
+Factory functions to create model architectures.
+Builds ResNet backbone + projection heads for MoCo.
+
+CLASS: RGBSingleHead(nn.Module)
+───────────────────────────────
+
+PURPOSE: ResNet encoder with single projection head
+
+__init__(name='resnet50', head='linear', feat_dim=128)
+───────────────────────────────────────────────────────
+
+PARAMETERS:
+  • name: Backbone architecture
+    - 'resnet50' (default)
+    - 'resnet50x2' (wider version)
+    - 'resnet50x4' (even wider)
+    - 'resnet101', 'resnet152'
+  
+  • head: Type of projection head
+    - 'linear': Single linear layer + normalization
+    - 'mlp': Two linear layers (more expressive)
+  
+  • feat_dim: Output feature dimension (typically 128 or 256)
+
+ARCHITECTURE:
+
+  Input Image (3, 224, 224)
+  ↓
+  ResNet Backbone (ResNet50)
+  ├─ Conv1: 7x7 conv + BatchNorm + ReLU
+  ├─ Layer1: Residual blocks (3 blocks)
+  ├─ Layer2: Residual blocks (4 blocks)
+  ├─ Layer3: Residual blocks (6 blocks)
+  └─ Layer4: Residual blocks (3 blocks)
+  ↓
+  Global Average Pooling → (2048,) features
+  ↓
+  Projection Head (Linear or MLP)
+  ├─ Linear(2048 → feat_dim) if head='linear'
+  └─ Linear(2048 → 2048) → ReLU → Linear(2048 → feat_dim) if head='mlp'
+  ↓
+  L2 Normalization → (feat_dim,) output
+
+forward(x, mode=0)
+──────────────────
+
+PARAMETERS:
+  • x: Input image tensor [batch_size, 3, 224, 224]
+  • mode: 0 = normal encoder, 1 = momentum, 2 = inference
+    - Mode 0/1: Apply projection head
+    - Mode 2: Return backbone features (no projection)
+
+WORKFLOW:
+  1. feat = encoder(x) → ResNet outputs [batch_size, 2048]
+  2. if mode != 2: feat = head(feat) → [batch_size, feat_dim]
+  3. return feat
+
+USE CASES:
+  - Mode 0/1: Training (need projected features for contrastive loss)
+  - Mode 2: Downstream evaluation (need raw features)
+
+
+FILE 7: learning/contrast_trainer.py (Training Loop)
+═════════════════════════════════════════════════════
+
+PURPOSE:
+Implements the main contrastive learning training loop.
+Handles one epoch of training, loss computation, and logging.
+
+CLASS: ContrastTrainer(BaseTrainer)
+───────────────────────────────────
+
+train(epoch, train_loader, model, model_ema, contrast, criterion, optimizer)
+──────────────────────────────────────────────────────────────────────────
+
+PURPOSE: Train for one epoch
+
+MAIN LOOP:
+  for batch_idx, (images, indices) in enumerate(train_loader):
+    
+    Step 1: Move data to GPU
+    images = images.cuda(non_blocking=True)
+    indices = indices.cuda(non_blocking=True)
+    
+    Step 2: Get augmented views
+    x1, x2 = torch.split(images, [batch_size, batch_size])
+    └─ Dataset returns [view1; view2] concatenated
+    └─ Split back into separate views
+    
+    Step 3: Forward pass through encoders
+    q1 = model(x1, mode=0)  # Query from view1, main encoder
+    k1 = model_ema(x1, mode=0)  # Key from view1, momentum encoder
+    q2 = model(x2, mode=0)  # Query from view2
+    k2 = model_ema(x2, mode=0)  # Key from view2
+    
+    Step 4: Update memory bank with keys
+    contrast.update(indices, k1, k2)
+    └─ Add k1 and k2 to memory queue
+    └─ Remove oldest entries (FIFO)
+    
+    Step 5: Compute contrastive loss
+    loss1 = criterion(logits_q1, labels)
+    loss2 = criterion(logits_q2, labels)
+    loss = loss1 + loss2
+    └─ Compute loss for both direction pairs
+    
+    Step 6: Backward pass
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+    
+    Step 7: Update momentum encoder
+    model_ema = momentum_update(model, model_ema)
+    └─ θ_ema = 0.999 * θ_ema + 0.001 * θ
+    
+    Step 8: Log metrics
+    losses.update(loss.item())
+    top1_acc.update(accuracy(logits, labels))
+  
+  RETURNS: [avg_loss, avg_accuracy, ...]
+
+wrap_up(model, model_ema, optimizer)
+────────────────────────────────────
+
+PURPOSE: Prepare models for distributed data parallel training
+
+STEPS:
+  1. Move models to GPU
+  2. Apply Apex mixed precision (if enabled)
+  3. Wrap with DistributedDataParallel
+  4. Initialize momentum encoder with main encoder weights
+
+RETURNS: model_ddp, model_ema, optimizer
+
+logging(epoch, logs, lr)
+───────────────────────
+
+PURPOSE: Log metrics to TensorBoard
+
+LOGS:
+  • loss: Training loss
+  • acc: Training accuracy
+  • learning_rate: Current learning rate
+
+
+FILE 8: options/train_options.py (Configuration)
+═════════════════════════════════════════════════
+
+PURPOSE:
+Defines all command-line arguments for training.
+Centralizes hyperparameter configuration.
+
+CLASS: TrainOptions(BaseOptions)
+───────────────────────────────
+
+KEY ARGUMENTS:
+
+Data:
+  --csv_path              Path to CSV with image paths
+  --data_folder          Base folder for images
+  --n_aug                Number of augmentations (views)
+  --n_distortions        Which distortions to use (1-26)
+
+Training:
+  --epochs               Total training epochs
+  --batch_size          Batch size per GPU
+  --learning_rate       Initial learning rate
+  --momentum            SGD momentum parameter
+  --weight_decay        L2 regularization
+
+Model:
+  --arch                Model architecture (resnet50, etc)
+  --feat_dim            Feature dimension (256, 128, etc)
+  
+Memory:
+  --moco_dim            MoCo head dimension
+  --queue_size          Memory bank size (65536)
+  --momentum_coef       Momentum coefficient (0.999)
+
+Hardware:
+  --world_size          Number of GPUs
+  --rank                Current GPU rank
+  --num_workers         Data loading workers
+
+Optimization:
+  --optimizer           SGD / AdamW / LARS
+  --warmup_epochs       LR warmup duration
+
+Checkpointing:
+  --save_freq           Save checkpoint every N epochs
+  --resume              Path to checkpoint to resume
+
+USAGE EXAMPLE:
+  args = TrainOptions().parse()
+  → Returns args object with all parameters
+
+================================================================================
+SECTION 5: CODE FLOW DIAGRAMS
+================================================================================
+
+FLOW 1: Complete Training Pipeline
+═══════════════════════════════════
+
+START main()
+  ├─ Parse arguments (TrainOptions)
+  ├─ Detect GPUs: ngpus_per_node = torch.cuda.device_count()
+  └─ Launch workers: mp.spawn(main_worker, nprocs=ngpus_per_node)
+       │
+       └─ main_worker(gpu=0, ngpus_per_node=8, args)
+            │
+            ├─ Initialize DDP Environment
+            │  └─ torch.distributed.init_process_group()
+            │  └─ Sets up GPU communication
+            │
+            ├─ Build Models
+            │  ├─ model = build_model(args)  # Main encoder
+            │  └─ model_ema  # Momentum encoder
+            │
+            ├─ Build Dataset
+            │  ├─ Read CSV file
+            │  ├─ Create IQAImageClass with 26 distortions
+            │  └─ Wrap in DistributedSampler
+            │
+            ├─ Build Memory Bank
+            │  └─ contrast = build_mem(args)  # Queue of 65,536 embeddings
+            │
+            ├─ Create Components
+            │  ├─ criterion = CrossEntropyLoss()
+            │  ├─ optimizer = SGD/AdamW/LARS
+            │  └─ Wrap with DDP
+            │
+            ├─ Resume Checkpoint (if exists)
+            │
+            ├─ FOR epoch = 1 to num_epochs:
+            │  │
+            │  ├─ Set sampler epoch (for shuffling)
+            │  ├─ Adjust learning rate (cosine schedule)
+            │  │
+            │  └─ FOR batch in train_loader:
+            │     │
+            │     ├─ Get images [view1; view2]
+            │     ├─ Split: x1, x2 = split(images)
+            │     │
+            │     ├─ Forward pass:
+            │     │  ├─ q1 = model(x1)     # Query from main encoder
+            │     │  ├─ k1 = model_ema(x1) # Key from momentum encoder
+            │     │  ├─ q2 = model(x2)
+            │     │  └─ k2 = model_ema(x2)
+            │     │
+            │     ├─ Update memory bank:
+            │     │  └─ contrast.update(indices, k1, k2)
+            │     │     (Add embeddings to queue, remove old ones)
+            │     │
+            │     ├─ Compute loss:
+            │     │  ├─ Normalize q1, k1, q2, k2
+            │     │  ├─ Gather k from all GPUs
+            │     │  ├─ logits = (q @ k.T) / T
+            │     │  └─ loss = CrossEntropy(logits, labels)
+            │     │
+            │     ├─ Backward pass:
+            │     │  ├─ optimizer.zero_grad()
+            │     │  ├─ loss.backward()
+            │     │  └─ optimizer.step()
+            │     │
+            │     └─ Update momentum encoder:
+            │        └─ θ_ema = 0.999 * θ_ema + 0.001 * θ
+            │
+            ├─ Log metrics to TensorBoard
+            │
+            └─ Save checkpoint
+             END
+
+
+FLOW 2: Single Image Through Dataset
+══════════════════════════════════════
+
+Image: example.jpg (224×224 RGB)
+  ↓
+dataset.__getitem__(index)
+  ├─ Load image from disk: PIL Image
+  │
+  ├─ CREATE VIEW 1:
+  │  ├─ Random crop → crop1 (224×224)
+  │  ├─ Random distortion type: choice1 = random(1-26)
+  │  ├─ Apply distortion at random severity: level1 = random(0.1-0.9)
+  │  │  (e.g., Gaussian blur, JPEG compress, add noise, etc.)
+  │  └─ crop1_distorted
+  │
+  ├─ CREATE VIEW 2:
+  │  ├─ Different random crop → crop2 (224×224)
+  │  ├─ Different random distortion: choice2 = random(1-26)
+  │  ├─ Apply at different severity: level2 = random(0.1-0.9)
+  │  └─ crop2_distorted
+  │
+  ├─ CREATE PATCHES WITH SWAP:
+  │  ├─ crop_with_patch_swap(crop1_distorted, crop2_distorted)
+  │  ├─ Divide into overlapping patches
+  │  ├─ Swap ~10% of patches between views
+  │  └─ Stack back: view1, view2 (each: [n_patches, 3, 224, 224])
+  │
+  └─ RETURN: (view1, view2, index)
+       │
+       └─ Goes to DataLoader:
+           │
+           ├─ Collate batch: [view1_batch; view2_batch]
+           │
+           └─ Concatenated along batch dimension:
+              images tensor of shape [batch_size*2, 3, 224, 224]
+
+
+FLOW 3: Batch Through MoCo Training
+════════════════════════════════════
+
+images = [view1_batch; view2_batch]  # [256, 3, 224, 224]
+  ↓
+  1. SPLIT VIEWS
+     x1, x2 = torch.split(images, [128, 128])
+     x1: [128, 3, 224, 224]  (view1)
+     x2: [128, 3, 224, 224]  (view2)
+  ↓
+  2. FORWARD PASS
+     q1 = model(x1)          → [128, 256] (normalized)
+     k1 = model_ema(x1)      → [128, 256]
+     q2 = model(x2)          → [128, 256]
+     k2 = model_ema(x2)      → [128, 256]
+  ↓
+  3. UPDATE MEMORY BANK
+     contrast.update(indices_batch, k1, k2)
+     Memory bank size: 65,536
+     After update: 65,408 old entries + 128 new entries
+  ↓
+  4. GATHER ACROSS GPUs
+     All GPUs broadcast their k1, k2 to each other
+     Each GPU now has all keys from all GPUs
+     Total keys: batch_size * num_gpus + memory_bank
+  ↓
+  5. COMPUTE LOGITS
+     logits = einsum('nc,mc->nm', q1, gathered_keys) / T
+     → [128, 65536] for GPU0
+     Each row: similarity of query to all memory bank keys
+  ↓
+  6. CREATE LABELS & LOSS
+     Labels: which key matches which query (at queue position)
+     loss = CrossEntropy(logits, labels)
+  ↓
+  7. BACKWARD & UPDATE
+     optimizer.zero_grad()
+     loss.backward()
+     optimizer.step()
+     → Updates all parameters in model
+  ↓
+  8. MOMENTUM UPDATE
+     for param_m, param_b in zip(momentum_params, base_params):
+         param_m = 0.999 * param_m + 0.001 * param_b
+     → Momentum encoder changes very slowly (1% per step)
+  ↓
+  Repeat for next batch
+
+
+================================================================================
+SECTION 6: DATA PIPELINE EXPLANATION
+================================================================================
+
+HOW DATA FLOWS THROUGH THE SYSTEM
+══════════════════════════════════
+
+STAGE 1: CSV PREPARATION
+────────────────────────
+User creates: csv_files/moco_train.csv
+
+Format:
+  Image_path
+  /path/to/image1.jpg
+  /path/to/image2.jpg
+  /path/to/image3.jpg
+  ...
+
+Purpose: Tells dataset where to find images
+
+STAGE 2: DATASET INITIALIZATION
+───────────────────────────────
+dataset = IQAImageClass(
+    csv_path="csv_files/moco_train.csv",
+    n_aug=2,
+    n_distortions=26,
+    patch_size=224,
+    swap_crops=10
+)
+
+Actions:
+  • Reads CSV
+  • Stores image path list
+  • Stores configuration parameters
+
+STAGE 3: DISTRIBUTED SAMPLER
+────────────────────────────
+sampler = DistributedSampler(dataset)
+
+Purpose: Ensures each GPU gets different images
+  GPU0: indices [0, 8, 16, 24, ...]
+  GPU1: indices [1, 9, 17, 25, ...]
+  GPU2: indices [2, 10, 18, 26, ...]
+  etc.
+
+Result: No duplicate data across GPUs
+
+STAGE 4: DATA LOADER
+───────────────────
+loader = DataLoader(
+    dataset,
+    batch_size=128,
+    sampler=sampler,
+    num_workers=4,
+    pin_memory=True
+)
+
+Functionality:
+  • num_workers=4: 4 processes load data in parallel
+  • pin_memory=True: Keeps data in GPU-pinned RAM (faster transfer)
+  • Batches indices together
+
+STAGE 5: PER-SAMPLE PROCESSING
+──────────────────────────────
+For each index in batch:
+
+dataset[5]:
+  ├─ Load image from disk (PIL Image)
+  ├─ PROCESS IMAGE 5:
+  │  ├─ Create view1:
+  │  │  ├─ Random crop: (224, 224)
+  │  │  ├─ Random distortion: e.g., GaussianBlur (choice=1)
+  │  │  ├─ Severity: level=0.6
+  │  │  └─ Result: blurred crop
+  │  │
+  │  └─ Create view2:
+  │     ├─ Different random crop: (224, 224)
+  │     ├─ Different distortion: e.g., JPEG (choice=6)
+  │     ├─ Severity: level=0.3
+  │     └─ Result: compressed crop
+  │
+  └─ Return: (view1_tensor, view2_tensor, index=5)
+
+STAGE 6: BATCH COLLATION
+───────────────────────
+Collate function concatenates samples:
+
+sample 0: (view1_0, view2_0, 0)
+sample 1: (view1_1, view2_1, 1)
+...
+sample 127: (view1_127, view2_127, 127)
+
+Batched:
+  images = [view1_0; view1_1; ...; view1_127;  # view1 stack
+            view2_0; view2_1; ...; view2_127]  # view2 stack
+  indices = [0, 1, 2, ..., 127]
+
+Shape:
+  images: [256, 3, 224, 224]  (batch_size*2)
+  indices: [128]
+
+STAGE 7: GPU TRANSFER
+────────────────────
+images = images.cuda()  # Move to GPU0
+indices = indices.cuda()
+
+Speed: ~100 MB/s (20-30 ms per batch)
+
+STAGE 8: TRAINING FORWARD
+────────────────────────
+x1, x2 = torch.split(images, [128, 128])
+
+q1 = model(x1)  → encoder processes
+                   Input: x1 [128, 3, 224, 224]
+                   ResNet backbone: 2048 features
+                   Projection head: 256 features
+                   Output: q1 [128, 256]
+
+k1 = model_ema(x1)  → momentum encoder
+                      Same process, different weights
+                      Output: k1 [128, 256]
+
+Same for x2 → q2, k2
+
+STAGE 9: LOSS COMPUTATION
+────────────────────────
+Queue contains 65,536 previous embeddings
+
+logits = einsum('nc,mc->nm', q1, queue) / T
+
+logits[i, j] = similarity(q1[i], queue[j])
+
+Result: logits [128, 65536]
+
+Each query should match its corresponding key in queue
+Loss encourages correct matching
+
+STAGE 10: GRADIENT FLOW
+──────────────────────
+loss.backward()
+  ├─ Compute gradients for all parameters
+  ├─ Gradient flows through:
+  │  ├─ MLP head
+  │  ├─ ResNet backbone layers
+  │  └─ All conv/bn parameters
+  │
+  └─ Model parameters updated
+
+model_ema remains static (no gradients)
+  But gets updated via: θ_ema = 0.999 * θ_ema + 0.001 * θ_main
+
+
+STAGE 11: NEXT BATCH
+───────────────────
+DataLoader fetches next 128 samples
+Same process repeats
+
+
+MEMORY BANK OPERATION IN DETAIL
+════════════════════════════════
+
+Initialization:
+  Queue: [null × 65536]
+
+Batch 1 (indices 0-127):
+  k1_batch = 128 embeddings from views 0-127
+  Queue → Insert k1_batch at position 0
+  Queue: [k_0:128 || null × 65408]
+  Size: 128
+
+Batch 2 (indices 128-255):
+  k2_batch = 128 more embeddings
+  Queue → Append at position 128
+  Queue: [k_0:128 || k_128:256 || null × 65280]
+  Size: 256
+
+Batch 512 (queue full for first time):
+  Queue: [k_0:65536]
+
+Batch 513 (queue is full, start FIFO):
+  k513_batch = 128 embeddings
+  Queue → Remove first 128 (k_0:128)
+         → Add at end (k_513:641)
+  Queue: [k_128:256 || ... || k_513:641]
+  Size: 65536 (unchanged)
+
+Purpose:
+  - Diverse negatives: Keys are from many previous batches
+  - Not too stale: Keys are recent enough (from last few epochs)
+  - Computational efficiency: Queue is fixed size
+
+Queue Benefits for Contrastive Learning:
+  ├─ Large number of negatives (65536)
+  ├─ Larger batch size indirectly (effective batch size = actual batch + queue)
+  ├─ More stable training (compared to small batches)
+  └─ Memory efficient (doesn't store all embeddings)
+
+
+================================================================================
+SECTION 7: TRAINING LOOP WALKTHROUGH (DETAILED)
+================================================================================
+
+EPOCH EXECUTION STEP-BY-STEP
+═════════════════════════════
+
+EPOCH 1, BATCH 1:
+─────────────────
+
+Step 1: Data Loading
+  DataLoader samples indices [0, 8, 16, 24, ...] (GPU0's share)
+  Loads 128 samples from IQAImageClass
+
+Step 2: Data Transforms per sample
+  For index 5:
+    • Loads image from disk
+    • Creates 2 augmented views with random distortions
+    • Crops with patch swapping
+    • Returns (view1, view2, 5)
+
+Step 3: Batch Collation
+  Stacks 128 samples:
+  images.shape = [256, 3, 224, 224]  (view1_batch + view2_batch)
+  indices.shape = [128]
+
+Step 4: GPU Transfer
+  images = images.cuda()  # GPU0
+  indices = indices.cuda()
+
+Step 5: Split Views
+  x1, x2 = torch.split(images, [128, 128])
+  x1 shape: [128, 3, 224, 224]
+  x2 shape: [128, 3, 224, 224]
+
+Step 6: Forward Pass
+  
+  6a. Process x1 through main encoder
+      x1 [128, 3, 224, 224]
+       ↓ Conv layer 1
+      [128, 64, 112, 112]
+       ↓ ResNet layer 1
+      [128, 256, 112, 112]
+       ↓ ResNet layer 2
+      [128, 512, 56, 56]
+       ↓ ResNet layer 3
+      [128, 1024, 28, 28]
+       ↓ ResNet layer 4
+      [128, 2048, 7, 7]
+       ↓ Global average pooling
+      [128, 2048]
+       ↓ Projection head (Linear + BatchNorm)
+      [128, 256]
+       ↓ L2 Normalization
+      q1 = [128, 256]  ← Query embeddings (normalized)
+  
+  6b. Process x1 through momentum encoder
+      Same architecture, different weights
+      k1 = model_ema(x1) = [128, 256]  ← Key embeddings
+  
+  6c. Process x2
+      q2 = model(x2) = [128, 256]
+      k2 = model_ema(x2) = [128, 256]
+
+Step 7: Memory Bank Update
+  
+  Before update:
+    Memory queue shape: [65536, 256]
+    Filled positions: ~32768 (half full, epoch 1)
+  
+  contrast.update(indices, k1, k2)
+    a. Concatenate k1 and k2
+       keys = [k1; k2] = [256, 256]
+    b. Add to queue at current position
+       queue[0:128] = k1
+       queue[128:256] = k2
+    c. Move pointer forward
+       ptr = (ptr + 256) % 65536
+  
+  After update:
+    queue[0:256] has new embeddings from batch 1
+    Remaining [256:65536] has old embeddings
+
+Step 8: All-gather Across GPUs
+  
+  Distributed training setup:
+    GPU0 has k1_gpu0, k2_gpu0 (shape: [256, 256])
+    GPU1 has k1_gpu1, k2_gpu1 (shape: [256, 256])
+  
+  dist.all_gather() broadcasts:
+    All GPUs get concatenated: [512, 256]
+    GPU0: k_all = [k1_gpu0, k2_gpu0, k1_gpu1, k2_gpu1]
+    GPU1: k_all = [k1_gpu0, k2_gpu0, k1_gpu1, k2_gpu1]
+    GPU2: k_all = [k1_gpu0, k2_gpu0, k1_gpu1, k2_gpu1]
+
+Step 9: Compute Logits
+  
+  logits = einsum('nc,mc->nm', q1, k_all) / temperature
+  
+  Computation:
+    q1 shape: [128, 256]
+    k_all shape: [512, 256]  (embeddings from all GPUs + memory)
+    logits shape: [128, 512]
+  
+  Example values (cosine similarities before temperature):
+    logits[0, 128] = 0.95 (q1[0] matches k1_gpu0[0] - the true pair)
+    logits[0, 200] = 0.02 (q1[0] vs random negative)
+    logits[0, 450] = -0.01 (q1[0] vs another random negative)
+
+Step 10: Temperature Scaling
+  
+  T = 0.07 (temperature parameter)
+  logits = logits / T
+  
+  Effect:
+    logits[0, 128] = 0.95 / 0.07 = 13.57 (exaggerated positive)
+    logits[0, 200] = 0.02 / 0.07 = 0.29
+    logits[0, 450] = -0.01 / 0.07 = -0.14
+  
+  Result: Softmax becomes more "peaky"
+
+Step 11: Create Labels
+  
+  For query 0 from GPU0: true key is at position 128 (in k_all)
+  For query 1 from GPU0: true key is at position 129
+  ...
+  For query 127 from GPU0: true key is at position 255
+  
+  In distributed setting:
+    rank = GPU index (0, 1, 2, ...)
+    N = batch_size per GPU = 128
+    labels = arange(N) + rank * N
+  
+  Example (GPU1):
+    rank = 1
+    labels = [128, 129, 130, ..., 255]
+    These point to GPU1's embeddings in k_all
+
+Step 12: Cross-Entropy Loss
+  
+  loss = CrossEntropyLoss(logits, labels)
+  
+  For each sample:
+    softmax(logits[0]) = [e^l0 / ∑e^l_i for all l_i in logits[0]]
+    If l[0,128] = 13.57, then softmax[128] ≈ 0.9999
+    If l[0,200] = 0.29, then softmax[200] ≈ 0.0001
+    
+    loss[0] = -log(softmax[128]) ≈ 0.0001 (very small, correct prediction)
+  
+  Final loss = mean(loss over 128 samples)
+  Example: avg_loss = 0.5678
+
+Step 13: Apply to View 2
+  
+  Repeat steps 8-12 for q2 and k2
+  loss2 = CrossEntropyLoss(logits_q2, labels_q2)
+  
+  Combined loss:
+    total_loss = (loss1 + loss2) / 2 = (0.5678 + 0.5634) / 2 = 0.5656
+
+Step 14: Backward Pass
+  
+  optimizer.zero_grad()
+    ├─ Clear previous gradients
+  
+  total_loss.backward()
+    ├─ Compute gradients of loss w.r.t. all parameters
+    ├─ Backward propagates through:
+    │  ├─ Projection head
+    │  ├─ All ResNet layers
+    │  └─ All conv and BN parameters
+    │
+    └─ Gradients stored in param.grad
+  
+  Example gradient magnitudes:
+    model.layer4[-1].weight.grad ≈ 0.001 (far from output)
+    model.head[0].weight.grad ≈ 0.1 (close to loss)
+
+Step 15: Optimization Step
+  
+  optimizer.step()
+    ├─ For each parameter p:
+    │  p = p - lr * p.grad  (SGD update)
+    │
+    └─ Learning rate schedule:
+       lr = initial_lr * cosine_annealing_schedule(epoch, total_epochs)
+       Example: lr = 0.03 at epoch 1, lr = 0.0001 at epoch 200
+
+Step 16: Momentum Encoder Update
+  
+  _update_momentum_encoder(m=0.999)
+  
+  For each parameter pair:
+    param_m = 0.999 * param_m + 0.001 * param_b
+  
+  Effect: Momentum encoder slowly follows main encoder
+    After 1 step: 99.9% old, 0.1% new
+    After 1000 steps: Fully updated with some lag
+
+Step 17: Logging (every N batches)
+  
+  losses.update(total_loss.item())
+  top1_acc.update(accuracy_score)
+  
+  Sample log:
+    Epoch 1, Batch 100: loss=0.5656, acc=0.92
+
+Step 18: End of Batch 1
+  
+  Queue now contains embeddings from batch 1
+  All parameters updated
+  Ready for next batch
+
+EPOCH 1, BATCH 2:
+─────────────────
+(Same process repeats with different images)
+
+EPOCH 1 END:
+────────────
+  trainer.save(model, model_ema, contrast, optimizer, epoch=1)
+  
+  Saves:
+    - model weights (encoder + head)
+    - model_ema weights
+    - memory bank state
+    - optimizer state (for resuming)
+  
+  Logging to TensorBoard:
+    - Average loss for epoch
+    - Average accuracy for epoch
+    - Learning rate used
+
+EPOCH 2:
+─────────
+  Learning rate adjusted (cosine schedule)
+  Same process repeats
+  More data diversity (random crops/distortions are different)
+
+================================================================================
+SECTION 8: FEATURE EXTRACTION WALKTHROUGH
+================================================================================
+
+AFTER TRAINING: Using Model for Feature Extraction
+═════════════════════════════════════════════════
+
+Script: demo_quality_aware_feats.py
+
+USAGE:
+------
+python demo_quality_aware_feats.py \
+    --checkpoint ./save_dir/ckpt_epoch_200.pth.tar \
+    --image_path ./sample_images/test.jpg
+
+EXECUTION FLOW:
+───────────────
+
+Step 1: Load Checkpoint
+  checkpoint = torch.load('ckpt_epoch_200.pth.tar')
+  
+  Contains:
+    - model state dict (encoder weights)
+    - epoch number
+    - training metrics
+
+Step 2: Build Model
+  model, _ = build_model(args)
+  model.load_state_dict(checkpoint['model'])
+  
+  Architecture:
+    ResNet50 backbone + projection head
+
+Step 3: Load Image
+  image = Image.open('./sample_images/test.jpg')
+  
+  Format check:
+    - Must be RGB or convertible
+    - Any resolution (will be resized)
+
+Step 4: Preprocess Image
+  transform = transforms.Compose([
+      transforms.Resize(256),
+      transforms.CenterCrop(224),
+      transforms.ToTensor(),
+      transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                          std=[0.229, 0.224, 0.225])
+  ])
+  
+  Preprocessing steps:
+    a. Resize to 256×256
+    b. Crop center 224×224 (matches training)
+    c. Convert to tensor [0,1]
+    d. Normalize using ImageNet statistics
+  
+  Result: image_tensor shape [1, 3, 224, 224]
+
+Step 5: Extract Features (Mode 0: Projected)
+  
+  model.eval()  # Disable dropout, batch norm running stats
+  
+  with torch.no_grad():  # Don't compute gradients
+    features = model(image_tensor.cuda(), mode=0)
+  
+  Forward pass:
+    image_tensor [1, 3, 224, 224]
+    ↓ ResNet50 backbone
+    [1, 2048] (global average pooled)
+    ↓ Projection head
+    [1, 256] (256-dimensional feature)
+    ↓ L2 normalization
+    features [1, 256] (normalized)
+  
+  Result: 256-dimensional feature vector
+           Each dimension has value in range [-1, 1]
+
+Step 6: Extract Features (Mode 2: Raw)
+  
+  raw_features = model(image_tensor.cuda(), mode=2)
+  
+  Forward pass:
+    image_tensor [1, 3, 224, 224]
+    ↓ ResNet50 backbone
+    raw_features [1, 2048] (no projection)
+  
+  Result: 2048-dimensional feature vector
+          These are raw backbone features
+
+Step 7: Compute Quality Score (Optional)
+  
+  Using features for downstream task:
+  
+  a. Quality prediction:
+     quality_model = LinearLayer(256 → 1)
+     quality_score = quality_model(features)
+     
+  b. Similarity matching:
+     sim = cosine_similarity(test_features, reference_features)
+     if sim > 0.8: print("High quality match found")
+     
+  c. Clustering:
+     cluster = kmeans(features, n_clusters=5)
+     (Group images by quality level)
+
+Step 8: Save Features (Optional)
+  
+  np.save('test_features.npy', features.cpu().numpy())
+  
+  Result: Binary file with 256 float32 values
+          Can be loaded later for analysis
+
+DIFFERENCE BETWEEN MODES:
+────────────────────────
+
+Mode 0 (Training/Projection):
+  └─ Returns projected features after MLP head
+  └─ Dimension: 256
+  └─ Used for contrastive comparison during training
+  └─ Normalized (L2 = 1.0)
+
+Mode 2 (Inference/Backbone):
+  └─ Returns raw backbone features
+  └─ Dimension: 2048
+  └─ Richer representation
+  └─ Can be used for linear evaluation
+  └─ Not necessarily normalized
+
+QUALITY-AWARE vs CONTENT-AWARE:
+──────────────────────────────
+
+Quality-Aware Model:
+  Trained with:
+    - 26 distortion types
+    - Quality-aware augmentation
+  Strengths:
+    - Sensitive to image quality degradation
+    - Groups images by quality level
+  Use case:
+    - IQA (measuring image quality)
+    - Distortion type classification
+    - Quality ranking
+
+Content-Aware Model:
+  Trained with:
+    - Standard augmentations (crops, color jitter)
+    - Less distortion-focused
+  Strengths:
+    - Better at semantic content
+    - More standard features
+  Use case:
+    - Similarity search by content
+    - Classification tasks
+    - Cross-modal matching
+
+SELECT BASED ON YOUR TASK:
+  Quality assessment → use quality-aware
+  Content matching → use content-aware
+
+================================================================================
+END OF COMPLETE DOCUMENTATION
+================================================================================
+
+For questions about specific functions, refer to the code comments.
+For training tips, see SETUP_AND_RUN_INSTRUCTIONS.txt.
+
+Last updated: April 6, 2026

@@ -1,0 +1,317 @@
+================================================================================
+RE-IQA: Image Quality Assessment with Contrastive Learning
+COMPLETE SETUP AND RUN INSTRUCTIONS
+================================================================================
+
+SYSTEM REQUIREMENTS:
+- Python 3.8+
+- CUDA 11.0+ (for GPU training, optional for CPU)
+- 8GB+ RAM (16GB+ recommended for training)
+- 50GB+ free disk space (for datasets)
+
+================================================================================
+STEP 1: ENVIRONMENT SETUP
+================================================================================
+
+1.1 Navigate to project directory:
+    cd c:\Users\mohit\Desktop\reiqamodified\burner-reiqamodified
+
+1.2 Create Python virtual environment:
+    python -m venv .venv
+
+1.3 Activate virtual environment:
+    On Windows PowerShell:
+    .\.venv\Scripts\Activate.ps1
+    
+    On Windows Command Prompt:
+    .venv\Scripts\activate.bat
+    
+    On Linux/Mac:
+    source .venv/bin/activate
+
+1.4 Upgrade pip:
+    python -m pip install --upgrade pip
+
+================================================================================
+STEP 2: INSTALL DEPENDENCIES
+================================================================================
+
+2.1 Install all required packages from requirements.txt:
+    pip install -r requirements.txt
+
+2.2 Verify installation (optional):
+    python -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA Available: {torch.cuda.is_available()}')"
+
+2.3 If you have GPU and CUDA is not detected, install GPU-specific PyTorch:
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+================================================================================
+STEP 3: PREPARE DATA
+================================================================================
+
+3.1 Create data directories:
+    mkdir data
+    mkdir data\train
+    mkdir data\val
+
+3.2 Prepare CSV file with image paths and labels:
+    - Create a CSV file at: csv_files/image_list.csv
+    - Format: image_path,label
+    - Example:
+      /path/to/image1.jpg,quality_score
+      /path/to/image2.jpg,quality_score
+    
+3.3 Copy your images to the data directories:
+    - Place training images in: data/train/
+    - Place validation images in: data/val/
+
+================================================================================
+STEP 4: TRAINING SETUP (PRE-TRAINING WITH CONTRASTIVE LEARNING)
+================================================================================
+
+4.1 For Single GPU Training:
+    python main_contrast.py \
+        --batch_size 128 \
+        --num_workers 4 \
+        --epochs 200 \
+        --csv_path csv_files/moco_train.csv \
+        --data_folder data \
+        --save_freq 10 \
+        --learning_rate 0.03 \
+        --momentum 0.999 \
+        --queue_size 65536 \
+        --n_aug 2 \
+        --n_scale 1 \
+        --n_distortions 26 \
+        --patch_size 224 \
+        --swap_crops 10
+
+4.2 For Multi-GPU Training (Distributed Data Parallel):
+    python -m torch.distributed.launch \
+        --nproc_per_node=2 \
+        main_contrast.py \
+        --batch_size 256 \
+        --num_workers 8 \
+        --epochs 200 \
+        --csv_path csv_files/moco_train.csv \
+        --data_folder data \
+        --save_freq 10 \
+        --learning_rate 0.03 \
+        --momentum 0.999 \
+        --queue_size 65536 \
+        --n_aug 2 \
+        --n_scale 1 \
+        --n_distortions 26 \
+        --patch_size 224 \
+        --swap_crops 10
+
+4.3 Check training logs:
+    tensorboard --logdir=./save_dir
+
+    Then open browser to: http://localhost:6006
+
+================================================================================
+STEP 5: TRAINING WITH MULTI-DISTORTION ENCODER (MDE VARIANT - OPTIONAL)
+================================================================================
+
+5.1 For Single GPU Training with MDE:
+    python main_contrast_mde.py \
+        --batch_size 128 \
+        --num_workers 4 \
+        --epochs 200 \
+        --csv_path csv_files/moco_train.csv \
+        --data_folder data \
+        --save_freq 10 \
+        --learning_rate 0.03 \
+        --momentum 0.999 \
+        --queue_size 65536 \
+        --n_aug 2 \
+        --n_scale 1 \
+        --n_distortions 26 \
+        --patch_size 224 \
+        --swap_crops 10
+
+5.2 For Multi-GPU Training with MDE:
+    python -m torch.distributed.launch \
+        --nproc_per_node=2 \
+        main_contrast_mde.py \
+        --batch_size 256 \
+        --num_workers 8 \
+        --epochs 200 \
+        --csv_path csv_files/moco_train.csv \
+        --data_folder data \
+        --save_freq 10 \
+        --learning_rate 0.03 \
+        --momentum 0.999 \
+        --queue_size 65536 \
+        --n_aug 2 \
+        --n_scale 1 \
+        --n_distortions 26 \
+        --patch_size 224 \
+        --swap_crops 10
+
+================================================================================
+STEP 6: FEATURE EXTRACTION (AFTER TRAINING)
+================================================================================
+
+6.1 Extract Quality-Aware Features:
+    python demo_quality_aware_feats.py \
+        --checkpoint path/to/checkpoint.pth.tar \
+        --image_path path/to/image.jpg
+
+    Example:
+    python demo_quality_aware_feats.py \
+        --checkpoint ./save_dir/best_model.pth.tar \
+        --image_path ./sample_images/test_image.jpg
+
+6.2 Extract Content-Aware Features:
+    python demo_content_aware_feats.py \
+        --checkpoint path/to/checkpoint.pth.tar \
+        --image_path path/to/image.jpg
+
+    Example:
+    python demo_content_aware_feats.py \
+        --checkpoint ./save_dir/best_model.pth.tar \
+        --image_path ./sample_images/test_image.jpg
+
+6.3 Extract Features with Multi-Distortion Encoder:
+    python demo_quality_aware_feats_mde.py \
+        --checkpoint path/to/checkpoint_mde.pth.tar \
+        --image_path path/to/image.jpg
+
+    Example:
+    python demo_quality_aware_feats_mde.py \
+        --checkpoint ./save_dir/best_model_mde.pth.tar \
+        --image_path ./sample_images/test_image.jpg
+
+================================================================================
+STEP 7: COMMON PARAMETERS REFERENCE
+================================================================================
+
+Training Parameters:
+  --batch_size         Batch size per GPU (default: 128)
+  --num_workers        Number of data loading workers (default: 4)
+  --epochs             Number of training epochs (default: 200)
+  --csv_path           Path to CSV file with image paths (required)
+  --data_folder        Path to data directory (default: ./data)
+  --save_freq          Checkpoint save frequency in epochs (default: 10)
+  --learning_rate      Initial learning rate (default: 0.03)
+  --momentum           Momentum coefficient (default: 0.999)
+  --queue_size         Memory bank queue size (default: 65536)
+  --n_aug              Number of augmentations (default: 2)
+  --n_scale            Number of scales (default: 1)
+  --n_distortions      Number of distortion types to use (default: 26)
+  --patch_size         Patch size for cropping (default: 224)
+  --swap_crops         Swap crops overlap percentage (default: 10)
+  --world_size         Number of total GPUs (auto-detected)
+
+Feature Extraction Parameters:
+  --checkpoint         Path to trained model checkpoint (required)
+  --image_path         Path to image file (required)
+  --gpu                GPU ID to use (default: 0)
+
+================================================================================
+STEP 8: TROUBLESHOOTING
+================================================================================
+
+Issue: CUDA out of memory
+Solution: 
+  - Reduce batch_size (e.g., 64 or 32)
+  - Reduce num_workers
+  - Use smaller patch_size
+
+Issue: No module named 'torch'
+Solution:
+  - Verify virtual environment is activated
+  - Run: pip install -r requirements.txt
+
+Issue: FileNotFoundError for checkpoint
+Solution:
+  - Verify checkpoint path exists
+  - Check save_dir after training completes
+  - Use absolute path instead of relative path
+
+Issue: No GPU detected
+Solution:
+  - Check CUDA installation: nvidia-smi
+  - Reinstall PyTorch with CUDA support (Step 2.3)
+  - Verify GPU is not being used by other processes
+
+Issue: CSV not found or format error
+Solution:
+  - Verify CSV file path is correct
+  - Check CSV format: each line should be "image_path,label"
+  - No header row, paths should be absolute or relative to project root
+
+================================================================================
+STEP 9: OPTIONAL - LINEAR EVALUATION
+================================================================================
+
+9.1 After pre-training, you can perform linear evaluation:
+    python -m torch.distributed.launch \
+        --nproc_per_node=1 \
+        -m learning.linear_trainer \
+        --checkpoint path/to/pretrained_model.pth.tar \
+        --data_folder data \
+        --batch_size 256
+
+================================================================================
+STEP 10: PROJECT STRUCTURE REFERENCE
+================================================================================
+
+burner-reiqamodified/
+├── main_contrast.py              # Main training script
+├── main_contrast_mde.py           # Training with Multi-Distortion Encoder
+├── demo_quality_aware_feats.py    # Feature extraction (quality-aware)
+├── demo_content_aware_feats.py    # Feature extraction (content-aware)
+├── demo_quality_aware_feats_mde.py # Feature extraction (MDE variant)
+├── requirements.txt               # Python dependencies
+├── csv_files/
+│   └── moco_train.csv            # Training data CSV
+├── datasets/
+│   ├── dataset.py                # Dataset class with 26 distortions
+│   ├── iqa_distortions.py        # 26 distortion implementations
+│   └── util.py                   # Dataset utilities
+├── learning/
+│   ├── base_trainer.py           # Base trainer class
+│   ├── contrast_trainer.py       # Contrastive learning trainer
+│   └── linear_trainer.py         # Linear evaluation trainer
+├── moco/
+│   ├── builder.py                # MoCo model builder
+│   ├── builder_mde.py            # MoCo-MDE model builder
+│   ├── losses.py                 # Contrastive loss functions
+│   └── optimizer.py              # Learning rate scheduling
+├── networks/
+│   ├── resnet.py                 # ResNet backbone
+│   ├── build_backbone.py         # Backbone builder
+│   └── multi_distortion_encoder.py # MDE implementation
+└── newmodiqa/                     # Clean copy with all improvements
+
+================================================================================
+STEP 11: RECOMMENDED WORKFLOW
+================================================================================
+
+1. Complete Steps 1-3 (Setup environment, install dependencies, prepare data)
+
+2. Run training (Step 4 or 5 depending on your choice):
+   python main_contrast.py --batch_size 128 --epochs 200 --csv_path csv_files/moco_train.csv
+
+3. Monitor training progress:
+   tensorboard --logdir=./save_dir
+
+4. After training completes, extract features (Step 6):
+   python demo_quality_aware_feats.py --checkpoint ./save_dir/ckpt_epoch_200.pth.tar --image_path ./sample_images/test.jpg
+
+5. Evaluate features on downstream tasks
+
+================================================================================
+END OF INSTRUCTIONS
+================================================================================
+
+For more information, see:
+- README.md - Project overview
+- README_MDE.md - Multi-Distortion Encoder documentation
+- CODE_REFERENCES.md - Complete code documentation
+- CODE_CLEANUP_SUMMARY.md - Recent changes and bug fixes
+
+Questions or issues? Check the troubleshooting section (Step 8).
