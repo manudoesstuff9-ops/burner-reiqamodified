@@ -57,7 +57,8 @@ class BaseTrainer(object):
 
     def init_tensorboard_logger(self):
         args = self.args
-        if args.rank == 0:
+        # In single GPU mode, rank is 0; in distributed mode, check rank == 0
+        if not hasattr(args, 'rank') or args.rank == 0:
             self.logger = tb_logger.Logger(logdir=args.tb_folder, flush_secs=2)
 
     def adjust_learning_rate(self, optimizer, epoch):

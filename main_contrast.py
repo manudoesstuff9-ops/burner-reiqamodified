@@ -28,11 +28,12 @@ def main():
     args = TrainOptions().parse()
 
     args.distributed = args.world_size > 1 or args.multiprocessing_distributed
-    ngpus_per_node = torch.cuda.device_count()
+    ngpus_per_node = torch.cuda.device_count() if torch.cuda.is_available() else 1
 
-    if ngpus_per_node == 1:
-        # Single GPU mode (Quadro RTX 4000)
+    if ngpus_per_node <= 1:
+        # Single GPU mode or CPU mode
         main_worker(0, 1, args)
+        return
     elif args.multiprocessing_distributed:
         args.world_size = ngpus_per_node * args.world_size
         mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
@@ -50,12 +51,21 @@ def main_worker(gpu, ngpus_per_node, args):
         args.multiprocessing_distributed = True
         trainer.init_ddp_environment(gpu, ngpus_per_node)
     else:
-        # Single GPU mode
+        # Single GPU mode - set all rank/local_rank variables to 0
         args.distributed = False
         args.multiprocessing_distributed = False
-        torch.cuda.set_device(0)
-        args.gpu = 0
-        print("Use GPU: 0 for training (single GPU mode)")
+        args.rank = 0
+        args.local_rank = 0
+        args.node_rank = 0
+        args.ngpus_per_node = 1
+        args.local_center = 0
+        if torch.cuda.is_available():
+            torch.cuda.set_device(0)
+            args.gpu = 0
+            print("Use GPU: 0 for training (single GPU mode)")
+        else:
+            args.gpu = -1  # CPU mode
+            print("CUDA not available - using CPU for training")
 
     model, model_ema = build_model(args)
 
@@ -63,9 +73,12 @@ def main_worker(gpu, ngpus_per_node, args):
         build_contrast_loader(args, ngpus_per_node)
 
     contrast = build_mem(args, len(train_dataset))
-    contrast.cuda()
+    if torch.cuda.is_available():
+        contrast.cuda()
 
-    criterion = nn.CrossEntropyLoss().cuda()
+    criterion = nn.CrossEntropyLoss()
+    if torch.cuda.is_available():
+        criterion = criterion.cuda()
     
     if args.optimizer == "SGD":
         optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
@@ -78,8 +91,9 @@ def main_worker(gpu, ngpus_per_node, args):
     
     # Skip DDP wrapping for single GPU
     if ngpus_per_node == 1:
-        model.cuda()
-        model_ema.cuda()
+        if torch.cuda.is_available():
+            model.cuda()
+            model_ema.cuda()
     else:
         model, model_ema, optimizer = trainer.wrap_up(model, model_ema, optimizer)
 

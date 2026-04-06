@@ -211,6 +211,16 @@ class ContrastTrainer(BaseTrainer):
                     k = model_ema(x, mode=1)
             return k, k
         
+        # Multi-GPU mode only beyond this point
+        if not hasattr(args, 'local_rank') or args.local_rank is None:
+            # Fallback for single GPU
+            with torch.no_grad():
+                if args.jigsaw:
+                    k = model_ema(x, x_jig=None, mode=1)
+                else:
+                    k = model_ema(x, mode=1)
+            return k, k
+        
         local_gp = self.local_group
         bsz = x.size(0)
 
@@ -275,6 +285,9 @@ class ContrastTrainer(BaseTrainer):
         args = self.args
         model.train()
         model_ema.eval()
+        
+        # Check if we're in distributed mode
+        is_distributed = dist.is_available() and dist.is_initialized()
 
         def set_bn_train(m):
             classname = m.__class__.__name__
@@ -400,8 +413,8 @@ class ContrastTrainer(BaseTrainer):
             batch_time.update(time.time() - end)
             end = time.time()
 
-            # print info
-            if args.local_rank == 0:
+            # print info (only on rank 0 or in single GPU mode)
+            if not hasattr(args, 'local_rank') or args.local_rank == 0:
                 if (idx + 1) % args.print_freq == 0:
                     print('Train: [{0}][{1}/{2}]\t'
                           'BT {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
@@ -528,8 +541,8 @@ class ContrastTrainer(BaseTrainer):
             batch_time.update(time.time() - end)
             end = time.time()
 
-            # print info
-            if args.local_rank == 0:
+            # print info (only on rank 0 or in single GPU mode)
+            if not hasattr(args, 'local_rank') or args.local_rank == 0:
                 if (idx + 1) % args.print_freq == 0:
                     print('Train: [{0}][{1}/{2}]\t'
                           'BT {batch_time.val:.3f} ({batch_time.avg:.3f})\t'

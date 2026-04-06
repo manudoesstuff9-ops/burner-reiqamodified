@@ -342,7 +342,11 @@ def build_contrast_loader(opt, ngpus_per_node):
     n_distortions = opt.n_distortions
     patch_size = opt.patch_size
     swap_crops = opt.swap_crops
-    batch_size = int(opt.batch_size / opt.world_size)
+    # For single GPU mode, world_size is -1, so just use batch_size as is
+    if opt.world_size > 1:
+        batch_size = int(opt.batch_size / opt.world_size)
+    else:
+        batch_size = opt.batch_size
     num_workers = int((opt.num_workers + ngpus_per_node - 1) / ngpus_per_node)
     csv_path = opt.csv_path
     #train_transform, jigsaw_transform = \
@@ -362,7 +366,11 @@ def build_contrast_loader(opt, ngpus_per_node):
     #     )
     train_dataset = IQAImageClass(csv_path,n_aug, n_scale, n_distortions, patch_size,swap_crops)
 
-    train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+    # Only use DistributedSampler for multi-GPU training
+    if ngpus_per_node > 1 or opt.distributed:
+        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+    else:
+        train_sampler = None
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=batch_size, shuffle=(train_sampler is None),
@@ -418,8 +426,13 @@ def build_linear_loader(opt, ngpus_per_node):
         image_folder_train = datasets.ImageFolder(train_dir, train_transform)
         image_folder_val = datasets.ImageFolder(val_dir, val_transform)
 
-        train_sampler = torch.utils.data.distributed.DistributedSampler(image_folder_train)
-        val_sampler = torch.utils.data.distributed.DistributedSampler(image_folder_val)
+        # Only use DistributedSampler for multi-GPU training
+        if ngpus_per_node > 1 or opt.distributed:
+            train_sampler = torch.utils.data.distributed.DistributedSampler(image_folder_train)
+            val_sampler = torch.utils.data.distributed.DistributedSampler(image_folder_val)
+        else:
+            train_sampler = None
+            val_sampler = None
 
         train_loader = torch.utils.data.DataLoader(
             image_folder_train,
