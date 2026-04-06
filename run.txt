@@ -4,3 +4,8 @@ this is the correct command
 
 
 python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -q -r requirements.txt; python main_contrast.py --batch_size 32 --epochs 200 --data_folder . --csv_file csv_files/moco_train.csv
+
+
+
+
+pip install -r requirements.txt; python main_contrast.py --batch_size 16 --epochs 100 --data_folder . --csv_file csv_files/moco_train.csv
