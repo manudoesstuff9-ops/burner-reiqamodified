@@ -46,7 +46,8 @@ class RGBMem(BaseMem):
         super(RGBMem, self).__init__(K, T, m)
         # create sampler
         self.multinomial = AliasMethod(torch.ones(n_data))
-        self.multinomial.cuda()
+        if torch.cuda.is_available():
+            self.multinomial.cuda()
 
         # create memory bank
         self.register_buffer('memory', torch.randn(n_data, n_dim))
@@ -76,7 +77,9 @@ class RGBMem(BaseMem):
             logits_jig = self._compute_logit(x_jig, w)
 
         # set label
-        labels = torch.zeros(bsz, dtype=torch.long).cuda()
+        labels = torch.zeros(bsz, dtype=torch.long)
+        if torch.cuda.is_available():
+            labels = labels.cuda()
 
         # update memory
         if (all_x is not None) and (all_y is not None):
@@ -96,7 +99,8 @@ class CMCMem(BaseMem):
         super(CMCMem, self).__init__(K, T, m)
         # create sampler
         self.multinomial = AliasMethod(torch.ones(n_data))
-        self.multinomial.cuda()
+        if torch.cuda.is_available():
+            self.multinomial.cuda()
 
         # create memory bank
         self.register_buffer('memory_1', torch.randn(n_data, n_dim))
@@ -137,7 +141,9 @@ class CMCMem(BaseMem):
             logits2_jig = self._compute_logit(x2_jig, w1)
 
         # set label
-        labels = torch.zeros(bsz, dtype=torch.long).cuda()
+        labels = torch.zeros(bsz, dtype=torch.long)
+        if torch.cuda.is_available():
+            labels = labels.cuda()
 
         # update memory
         if (all_x1 is not None) and (all_x2 is not None) \

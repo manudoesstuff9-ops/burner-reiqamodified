@@ -43,8 +43,9 @@ class AliasMethod(object):
             self.prob[last_one] = 1
 
     def cuda(self):
-        self.prob = self.prob.cuda()
-        self.alias = self.alias.cuda()
+        if torch.cuda.is_available():
+            self.prob = self.prob.cuda()
+            self.alias = self.alias.cuda()
 
     def draw(self, N):
         """
