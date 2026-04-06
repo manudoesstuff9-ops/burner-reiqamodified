@@ -21,3 +21,5 @@ pip install -r requirements.txt; python main_contrast.py --batch_size 16 --epoch
 
 
 .\.venv\Scripts\Activate.ps1; python main_contrast.py --batch_size 16 --epochs 100 --csv_path csv_files/moco_train.csv --num_workers 2
+
+python -m venv .venv ;.\.venv\Scripts\Activate.ps1;pip install -r requirements.txt;pip install timm==0.6.13 protobuf==3.20.0
