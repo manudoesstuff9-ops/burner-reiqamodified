@@ -7,7 +7,7 @@ them into the corresponding folders.
 
 FOLDER STRUCTURE (created automatically):
 ================================================================================
-
+hii
 burner-reiqamodified/
 └── training_data/
     ├── kadis/              ← Extract KADIS-700K images here
