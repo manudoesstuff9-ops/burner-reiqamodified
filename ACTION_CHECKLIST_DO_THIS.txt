@@ -10,8 +10,8 @@ STEP 1: DOWNLOAD DATASETS
 
 Open these links in your browser and download:
 
-[ ] KADIS-700K (1GB)
-    LINK: http://database.mmsp-kn.de/kadis700k.html
+[ ] KADIS-10K
+    LINK: http://database.mmsp-kn.de/kadid-10k-database.html
     DOWNLOAD: Download button on their website
     SAVE TO: Your Downloads folder (or anywhere)
     
@@ -41,15 +41,15 @@ STEP 2: EXTRACT TO FOLDERS
 
 For each downloaded dataset zip file:
 
-[ ] KADIS-700K
-    DOWNLOAD FILE: KADIS-700K_release.zip (or similar)
-    EXTRACT TO: training_data/kadis/
+[ ] KADIS-10K
+    DOWNLOAD FILE: KADIS-10K_release.zip (or similar)
+    EXTRACT TO: training_data/kadis10k/
     
     Steps:
     1. Right-click the zip file
     2. Select "Extract All..."
-    3. Extract to: c:\Users\mohit\Desktop\reiqamodified\burner-reiqamodified\training_data\kadis
-    4. Verify result: You should see .png files directly in training_data/kadis/
+    3. Extract to: c:\Users\mohit\Desktop\reiqamodified\burner-reiqamodified\training_data\kadis10k
+    4. Verify result: You should see .png files directly in training_data/kadis10k/
     
 [ ] COCO 2017 Train
     DOWNLOAD FILE: train2017.zip
@@ -88,8 +88,8 @@ If you're comfortable with PowerShell, this is faster:
 Open PowerShell and run:
 
 # Extract KADIS
-Expand-Archive "C:\Users\[YourUsername]\Downloads\KADIS-700K_release.zip" `
-  -DestinationPath "training_data\kadis"
+Expand-Archive "C:\Users\[YourUsername]\Downloads\KADIS-10K_release.zip" `
+  -DestinationPath "training_data\kadis10k"
 
 # Extract COCO Train
 Expand-Archive "C:\Users\[YourUsername]\Downloads\train2017.zip" `
@@ -139,7 +139,7 @@ Before you run step 3, verify everything is in place:
 Run these commands in PowerShell:
 
 [ ] Check KADIS folder:
-    dir training_data\kadis
+    dir training_data\kadis10k
     (Should show .png files - at least one)
     
 [ ] Check COCO Train folder:
@@ -148,7 +148,7 @@ Run these commands in PowerShell:
     
 [ ] Check CSV file:
     Get-Content csv_files\moco_train.csv | Select-Object -First 5
-    (Should show "training_data/kadis/" and "training_data/coco_train/")
+    (Should show "training_data/kadis10k/" and "training_data/coco_train/")
     
 [ ] Check script exists:
     ls MASTER_SETUP_AND_RUN.ps1
@@ -275,7 +275,7 @@ QUICK REFERENCE - KEY LINKS
 ================================================================================
 
 Datasets Download:
-  • KADIS:     http://database.mmsp-kn.de/kadis700k.html
+  • KADIS:     http://database.mmsp-kn.de/kadid-10k-database.html
   • COCO:      https://cocodataset.org/#download
   • AVA:       https://github.com/mtobeiyf/ava
   • VOC2012:   http://host.robots.ox.ac.uk/pascal/VOC/

@@ -10,7 +10,7 @@ FOLDER STRUCTURE (created automatically):
 
 burner-reiqamodified/
 └── training_data/
-    ├── kadis/              ← Extract KADIS-700K images here
+    ├── kadis10k/           ← Extract KADIS-10K images here
     ├── coco_train/         ← Extract COCO 2017 training images here
     ├── coco_val/           ← Extract COCO 2017 validation images here
     ├── coco_unlabeled/     ← Extract COCO 2017 unlabeled images here
@@ -23,19 +23,19 @@ burner-reiqamodified/
 HOW TO SET IT UP - 8 SIMPLE STEPS
 ================================================================================
 
-STEP 1: KADIS-700K
+STEP 1: KADIS-10K
 ─────────────────
-1. Download from: http://database.mmsp-kn.de/kadis700k.html
+1. Download from: http://database.mmsp-kn.de/kadid-10k-database.html
 2. Extract the zip file
 3. Copy ALL image files from the extracted folder
-4. Paste into: training_data/kadis/
-5. Result: training_data/kadis/ contains image files
+4. Paste into: training_data/kadis10k/
+5. Result: training_data/kadis10k/ contains image files
 
 ✓ Done for KADIS!
 
 EXAMPLE:
-  Before: C:\Downloads\KADIS-700K_release\ref_imgs\*
-  After:  training_data/kadis/*
+  Before: C:\Downloads\KADIS-10K_release\ref_imgs\*
+  After:  training_data/kadis10k/*
 
 
 STEP 2: COCO 2017 TRAINING
@@ -142,7 +142,7 @@ FINAL FOLDER STRUCTURE AFTER SETUP
 ================================================================================
 
 training_data/
-├── kadis/              ✓ Full of .png files
+├── kadis10k/           ✓ Full of .png files
 ├── coco_train/         ✓ Full of .jpg files
 ├── coco_val/           ✓ Full of .jpg files
 ├── coco_unlabeled/     ✓ Full of .jpg files
@@ -158,13 +158,13 @@ VERIFY YOUR SETUP
 Check that each folder has images:
 
 Windows PowerShell:
-  dir training_data/kadis
+  dir training_data/kadis10k
   dir training_data/coco_train
   dir training_data/coco_val
   # ... etc for other folders
 
 Should show:
-  Directory: C:\...\training_data\kadis
+  Directory: C:\...\training_data\kadis10k
   Mode     LastWriteTime         Length Name
   ----     ---------------         ------ ----
     -a--- 01/01/2024 12:00 PM    123456 image_001.png
@@ -197,7 +197,7 @@ The CSV file (csv_files/moco_train.csv) has been automatically updated to use
 these new simple folder names. No need to modify it manually!
 
 Current CSV structure:
-  training_data/kadis/image1.png
+  training_data/kadis10k/image1.png
   training_data/coco_train/image1.jpg
   training_data/coco_val/image2.jpg
   # ... and so on
@@ -206,20 +206,20 @@ Current CSV structure:
 QUICK REFERENCE - DOWNLOAD LINKS
 ================================================================================
 
-KADIS-700K:     http://database.mmsp-kn.de/kadis700k.html
+KADIS-10K:     http://database.mmsp-kn.de/kadid-10k-database.html
 COCO 2017:      https://cocodataset.org/#download
 COCO 2015:      https://cocodataset.org/#download
 AVA Dataset:    https://github.com/mtobeiyf/ava
 VOC2012:        http://host.robots.ox.ac.uk/pascal/VOC/
 
 ================================================================================
-IF YOU ONLY WANT KADIS-700K
+IF YOU ONLY WANT KADIS-10K
 ================================================================================
 
 You can download just KADIS and train with that:
 
-1. Download KADIS-700K
-2. Extract to training_data/kadis/
+1. Download KADIS-10K
+2. Extract to training_data/kadis10k/
 3. Run the script
 
 The CSV already has KADIS images, so it will work fine with just that dataset!

@@ -12,7 +12,7 @@ automated training with simplified dataset organization.
 Location: c:\Users\mohit\Desktop\reiqamodified\burner-reiqamodified\training_data\
 
 8 new directories were created:
-✓ training_data/kadis/
+✓ training_data/kadis10k/
 ✓ training_data/coco_train/
 ✓ training_data/coco_val/
 ✓ training_data/coco_unlabeled/
@@ -36,7 +36,7 @@ structure instead of the old nested UGC_images structure.
 
 Changes made (8 replacements):
 
-1. training_data/kadis700k/ref_imgs/ → training_data/kadis/
+1. training_data/kadis700k/ref_imgs/ → training_data/kadis10k/
 2. training_data/UGC_images/train2017/ → training_data/coco_train/
 3. training_data/UGC_images/val2017/ → training_data/coco_val/
 4. training_data/UGC_images/unlabeled2017/ → training_data/coco_unlabeled/
@@ -47,11 +47,11 @@ Changes made (8 replacements):
 
 Before example (old paths):
   training_data/UGC_images/train2017/000000495810.jpg
-  training_data/kadis700k/ref_imgs/china-1716134.png
+  training_data/kadis10k/china-1716134.png
 
 After example (new paths):
   training_data/coco_train/000000495810.jpg
-  training_data/kadis/china-1716134.png
+  training_data/kadis10k/china-1716134.png
 
 Total entries in CSV: ~1000 image paths across all 8 datasets
 
@@ -154,7 +154,7 @@ changes alone are sufficient to enable automated training.
 Step 1: Download datasets
 ───────────────────────
 Visit these links and download:
-  • KADIS-700K: http://database.mmsp-kn.de/kadis700k.html
+  • KADIS-10K: http://database.mmsp-kn.de/kadid-10k-database.html
   • COCO 2017: https://cocodataset.org/#download
   • AVA Dataset: https://github.com/mtobeiyf/ava
   • VOC2012: http://host.robots.ox.ac.uk/pascal/VOC/
@@ -173,7 +173,7 @@ Total: ~100GB+ if downloading all (you can skip AVA/unlabeled if needed)
 Step 2: Extract files
 ──────────────────────
 Extract each dataset to its corresponding folder:
-  • KADIS → training_data/kadis/
+  • KADIS → training_data/kadis10k/
   • COCO train2017 → training_data/coco_train/
   • COCO val2017 → training_data/coco_val/
   • COCO unlabeled2017 → training_data/coco_unlabeled/
@@ -276,7 +276,7 @@ Data:
 ├── csv_files/
 │   └── moco_train.csv ← IMAGE PATHS (UPDATED ✓)
 ├── training_data/ ← YOUR DATASETS GO HERE (CREATED ✓)
-│   ├── kadis/
+│   ├── kadis10k/
 │   ├── coco_train/
 │   ├── coco_val/
 │   ├── coco_unlabeled/
@@ -293,7 +293,7 @@ Data:
 
 Problem: "No images found" error
 Solution: Check that files are extracted directly in the folder
-  cd training_data/kadis
+  cd training_data/kadis10k
   dir (or ls on Mac/Linux)  ← Should show image files directly
 
 Problem: "ModuleNotFoundError: No module named 'torch'"
