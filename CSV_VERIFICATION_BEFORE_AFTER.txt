@@ -11,12 +11,12 @@ BEFORE (OLD STRUCTURE)
 
 training_data/UGC_images/AVA_Dataset/36236.jpg
 training_data/UGC_images/unlabeled2017/000000017821.jpg
-training_data/kadis700k/ref_imgs/china-1716134.png
+training_data/kadis10k/china-1716134.png
 training_data/UGC_images/test2015/COCO_test2015_000000235848.jpg
 training_data/UGC_images/train2017/000000495810.jpg
 training_data/UGC_images/AVA_Dataset/926235.jpg
 training_data/UGC_images/VOC2012/2010_003728.jpg
-training_data/kadis700k/ref_imgs/owl-1304223.png
+training_data/kadis10k/owl-1304223.png
 training_data/UGC_images/val2017/000000101787.jpg
 training_data/UGC_images/blur_image/example.jpg
 
@@ -32,12 +32,12 @@ AFTER (NEW STRUCTURE) ✓
 
 training_data/ava_dataset/36236.jpg
 training_data/coco_unlabeled/000000017821.jpg
-training_data/kadis/china-1716134.png
+training_data/kadis10k/china-1716134.png
 training_data/coco_test/COCO_test2015_000000235848.jpg
 training_data/coco_train/000000495810.jpg
 training_data/ava_dataset/926235.jpg
 training_data/voc2012/2010_003728.jpg
-training_data/kadis/owl-1304223.png
+training_data/kadis10k/owl-1304223.png
 training_data/coco_val/000000101787.jpg
 training_data/blur_image/example.jpg
 
@@ -45,7 +45,7 @@ Improvements with new structure:
   ✓ Flat, simple folder structure
   ✓ Each dataset in its own clearly-named folder
   ✓ Easy to organize (just copy to matching folder)
-  ✓ Matches folder naming exactly (kadis → training_data/kadis/)
+  ✓ Matches folder naming exactly (kadis → training_data/kadis10k/)
   ✓ No nested UGC_images folder required
 
 ================================================================================
@@ -54,13 +54,13 @@ DETAILED PATH MAPPING
 
 Here's exactly how each path type was converted:
 
-1. KADIS-700K
+1. KADIS-10K
    ──────────────────────────────────────
    OLD: training_data/kadis700k/ref_imgs/china-1716134.png
-   NEW: training_data/kadis/china-1716134.png
+   NEW: training_data/kadis10k/china-1716134.png
    
-   Folder to use: training_data/kadis/
-   Link: http://database.mmsp-kn.de/kadis700k.html
+   Folder to use: training_data/kadis10k/
+   Link: http://database.mmsp-kn.de/kadid-10k-database.html
 
 2. COCO 2017 Training
    ──────────────────────────────────────
@@ -136,11 +136,11 @@ Sample entries from current CSV (showing variety):
 Line 1:   Image_path (header)
 Line 2:   training_data/ava_dataset/36236.jpg ✓
 Line 3:   training_data/coco_unlabeled/000000017821.jpg ✓
-Line 4:   training_data/kadis/china-1716134.png ✓
+Line 4:   training_data/kadis10k/china-1716134.png ✓
 Line 5:   training_data/coco_test/COCO_test2015_000000235848.jpg ✓
 Line 6:   training_data/coco_unlabeled/000000438767.jpg ✓
-Line 7:   training_data/kadis/owl-1304223.png ✓
-Line 8:   training_data/kadis/rottweiler-1535951.png ✓
+Line 7:   training_data/kadis10k/owl-1304223.png ✓
+Line 8:   training_data/kadis10k/rottweiler-1535951.png ✓
 ...
 (~1000 total entries)
 
@@ -161,13 +161,6 @@ Windows PowerShell:
   
   Should show NO "UGC_images" or "kadis700k" paths!
 
-Linux/macOS:
-  cd ~/Desktop/reiqamodified/burner-reiqamodified
-  head -10 csv_files/moco_train.csv
-  tail -10 csv_files/moco_train.csv
-  
-  Should show NO "UGC_images" or "kadis700k" paths!
-
 Search for old paths to make sure they're gone:
   findstr "UGC_images" csv_files/moco_train.csv    (Windows)
   grep "UGC_images" csv_files/moco_train.csv       (Mac/Linux)
@@ -183,7 +176,7 @@ CSV file location:
 
 Folder structure it references:
   c:\Users\mohit\Desktop\reiqamodified\burner-reiqamodified\training_data\
-  ├── kadis\              ← For KADIS images (~200 in CSV)
+  ├── kadis10k\           ← For KADIS images (~200 in CSV)
   ├── coco_train\         ← For COCO train images (~300 in CSV)
   ├── coco_val\           ← For COCO val images (~100 in CSV)
   ├── coco_unlabeled\     ← For COCO unlabeled images (~150 in CSV)
@@ -221,10 +214,10 @@ AFTER YOU DOWNLOAD DATASETS
 For each dataset, copy ALL images directly into the matching folder:
 
 Example for KADIS:
-  BEFORE: C:\Downloads\KADIS-700K_release\ref_imgs\*.png
-  AFTER:  training_data\kadis\*.png
+  BEFORE: C:\Downloads\KADIS-10K_release\ref_imgs\*.png
+  AFTER:  training_data\kadis10k\*.png
   
-  ✓ Copy all .png files directly to training_data/kadis/
+  ✓ Copy all .png files directly to training_data/kadis10k/
   ✓ Don't create subfolders
   ✓ Images should be directly in the folder
 
@@ -242,11 +235,11 @@ WHY THIS CHANGE WAS NECESSARY
 
 Your original CSV referenced paths like:
   training_data/UGC_images/train2017/000000095810.jpg
-  training_data/kadis700k/ref_imgs/china-1716134.png
+  training_data/kadis10k/china-1716134.png
 
 But when we checked your system:
   ❌ No "UGC_images" folder existed
-  ❌ No "kadis700k" folder existed
+  ❌ No "kadis10k" folder existed
   ❌ training_data folder didn't exist at all!
 
 So training would immediately fail with "File not found" errors.

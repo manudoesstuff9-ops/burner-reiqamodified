@@ -11,7 +11,7 @@ Here's what was created and updated:
 ================================================================================
 
 All 8 training data folders have been created automatically:
-✓ training_data/kadis/              - For KADIS-700K images
+✓ training_data/kadis10k/           - For KADIS-10K images
 ✓ training_data/coco_train/         - For COCO 2017 training images
 ✓ training_data/coco_val/           - For COCO 2017 validation images
 ✓ training_data/coco_unlabeled/     - For COCO 2017 unlabeled images
@@ -29,8 +29,8 @@ Location: c:\Users\mohit\Desktop\reiqamodified\burner-reiqamodified\training_dat
 ✓ csv_files/moco_train.csv has been automatically updated
 
 What changed:
-  OLD:  training_data/kadis700k/ref_imgs/*
-  NEW:  training_data/kadis/*
+  OLD:  training_data/kadis10k/*
+  NEW:  training_data/kadis10k/*
 
   OLD:  training_data/UGC_images/train2017/*
   NEW:  training_data/coco_train/*
@@ -82,9 +82,9 @@ Comprehensive Guide:
 
 Follow these 8 simple steps:
 
-[ ] 1. Download KADIS-700K dataset
-      → Extract to: training_data/kadis/
-      → Link: http://database.mmsp-kn.de/kadis700k.html
+[ ] 1. Download KADIS-10K dataset
+      → Extract to: training_data/kadis10k/
+      → Link: http://database.mmsp-kn.de/kadid-10k-database.html
 
 [ ] 2. Download COCO 2017 Training images
       → Extract train2017/ to: training_data/coco_train/
@@ -215,7 +215,7 @@ Output directories created automatically:
 Before running training, verify everything exists:
 
 PowerShell check:
-  dir training_data\kadis
+  dir training_data\kadis10k
   dir training_data\coco_train
   dir csv_files\moco_train.csv
   cat MASTER_SETUP_AND_RUN.ps1 | Select -First 5
@@ -247,9 +247,9 @@ A: This is normal for first epoch with large datasets
    → GPU usage should ramp up after first 2-3 batches
    → Monitor GPU usage: nvidia-smi (if you have NVIDIA GPU)
 
-Q: I only have KADIS-700K dataset
+Q: I only have KADIS-10K dataset
 A: That's fine! Just download that one dataset
-   → Extract to training_data/kadis/
+   → Extract to training_data/kadis10k/
    → CSV already has KADIS entries (~200 images)
    → Run the script - it will train only on KADIS
 

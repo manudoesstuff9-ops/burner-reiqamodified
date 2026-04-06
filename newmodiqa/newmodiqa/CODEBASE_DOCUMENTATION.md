@@ -39,7 +39,7 @@
 │      │                  │                  │                    │
 │  Quality-Aware      Content-Aware     Linear Regressor         │
 │  Module             Module                                      │
-│  (KADIS-700k,       (ImageNet)                                  │
+│  (KADIS-10k,       (ImageNet)                                  │
 │   UGC data)                                                     │
 │      │                  │                  │                    │
 │      └──────────────────┼──────────────────┘                    │
@@ -54,7 +54,7 @@
 ### Two Training Stages:
 
 **Stage 1: Quality-Aware Module**
-- Trains on artificially distorted images (KADIS-700k) and natural images (COCO, AVA, etc.)
+- Trains on artificially distorted images (KADIS-10k) and natural images (COCO, AVA, etc.)
 - Learns to recognize and extract features of image quality
 - Uses MoCo-v2 with custom augmentations and distortions
 - Output: Quality-aware representations
@@ -976,7 +976,7 @@ patch_size = 160
 ```
 
 **Data:**
-- KADIS-700k: 700K distorted images
+- KADIS-10k: 10K distorted images
 - COCO: 330K images
 - AVA: ~250K natural images
 - Blur Dataset: 631 images
