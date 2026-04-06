@@ -1,1 +1,6 @@
 .\.venv\Scripts\Activate.ps1; python -m pip install -q -r requirements.txt; New-Item -ItemType Directory -Force -Path "save_dir","tb_logger" | Out-Null; python main_contrast.py --batch_size 128 --epochs 200 --learning_rate 0.05 --optimizer SGD --arch resnet50 --feat_dim 256 --cosine --warm --head linear --num_workers 4 --model_path ./save_dir --tb_path ./tb_logger --csv_path ./csv_files/moco_train.csv --multiprocessing_distributed
+this is the correct command 
+
+
+
+python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -q -r requirements.txt; python main_contrast.py --batch_size 32 --epochs 200 --data_folder . --csv_file csv_files/moco_train.csv
