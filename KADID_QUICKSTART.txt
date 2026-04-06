@@ -1,0 +1,75 @@
+================================================================================
+🚀 QUICK START - KADID-10K ONLY
+================================================================================
+
+This is the SIMPLEST setup - download 1 dataset and run training!
+
+================================================================================
+STEP 1: DOWNLOAD KADID-10K (only ~500MB)
+================================================================================
+
+Download from: https://database.mmsp-kn.de/kadid-10k.html
+
+Expected download: ~500 MB (small!)
+Expected extract size: ~500 MB
+
+================================================================================
+STEP 2: EXTRACT TO FOLDER
+================================================================================
+
+Extract to: training_data/kadid/
+
+You'll get files like:
+  reference_0001.png
+  reference_0002.png
+  ... (81 reference images total)
+
+Result should look like:
+  training_data/
+  └── kadid/
+      ├── reference_0001.png
+      ├── reference_0002.png
+      ├── reference_0003.png
+      └── ... (81 total)
+
+================================================================================
+STEP 3: RUN TRAINING
+================================================================================
+
+Open PowerShell and run:
+
+  .\MASTER_SETUP_AND_RUN.ps1 -DatasetPath "training_data/kadid" -CsvFile "csv_files/kadid_simple.csv"
+
+Or on Mac/Linux:
+
+  ./MASTER_SETUP_AND_RUN.sh
+
+That's it! Training will start automatically!
+
+================================================================================
+WHAT HAPPENS
+================================================================================
+
+✓ Creates virtual environment
+✓ Installs dependencies (PyTorch, etc)
+✓ Loads KADID-10K reference images
+✓ Starts training for 200 epochs
+✓ Saves checkpoints to save_dir/
+
+Estimated time:
+  GPU: 1-2 hours
+  CPU: 5-10 hours
+
+================================================================================
+DOWNLOAD LINK
+================================================================================
+
+KADID-10K: https://database.mmsp-kn.de/kadid-10k.html
+
+Steps:
+1. Go to the link
+2. Click download button
+3. Extract zip to training_data/kadid/
+4. Run the setup script
+
+================================================================================

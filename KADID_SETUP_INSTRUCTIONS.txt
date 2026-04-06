@@ -1,0 +1,124 @@
+================================================================================
+✅ READY FOR KADID-10K
+================================================================================
+
+Your project is now configured to use ONLY KADID-10K (not KADIS-700K!)
+
+Dataset size: ~500 MB (very small and easy to download)
+
+================================================================================
+3 SIMPLE STEPS
+================================================================================
+
+STEP 1: Download KADID-10K
+────────────────────────
+
+Link: https://database.mmsp-kn.de/kadid-10k.html
+
+Click the download button and save the zip file.
+
+Size: ~500 MB (much faster than KADIS-700K!)
+
+
+STEP 2: Extract to training_data/kadid/
+────────────────────────────────────────
+
+Right-click the zip and select "Extract All..."
+
+Extract to: 
+  c:\Users\mohit\Desktop\reiqamodified\burner-reiqamodified\training_data\kadid\
+
+You'll get 81 reference PNG files:
+  reference_0001.png
+  reference_0002.png
+  ... 
+  reference_0081.png
+
+Verify with PowerShell:
+  dir training_data\kadid | Measure-Object | Select-Object Count
+
+
+STEP 3: Run Training
+────────────────────
+
+Open PowerShell in the project folder and run:
+
+  .\MASTER_SETUP_AND_RUN.ps1
+
+That's it! Everything else is automatic:
+  ✓ Virtual environment created
+  ✓ Dependencies installed
+  ✓ Training launched
+  ✓ Saves checkpoints every epoch
+
+Estimated time: 1-2 hours (GPU) or 5-10 hours (CPU)
+
+================================================================================
+WHAT CHANGED
+================================================================================
+
+OLD (Multi-dataset):
+  - Required: KADIS-700K (1GB) + COCO (60GB) + AVA (40GB) + VOC2012 (2GB)
+  - CSV had ~1000 images
+  - Download time: 1-2 days on good internet
+  - Total: 100+ GB
+
+NEW (KADID-10K only):
+  - Required: KADID-10K only (~500 MB)
+  - CSV has 81 reference images
+  - Download time: 10 minutes
+  - Total: 500 MB
+
+Much simpler! ✨
+
+================================================================================
+CSV FILE UPDATED
+================================================================================
+
+File: csv_files/moco_train.csv
+
+Now contains ONLY:
+  training_data/kadid/reference_0001.png
+  training_data/kadid/reference_0002.png
+  ...
+  training_data/kadid/reference_0081.png
+
+Total: 81 reference images from KADID-10K
+
+================================================================================
+TRAINING DATA FOLDER
+================================================================================
+
+Current structure:
+  training_data/
+  └── kadid/          ← Extract KADID-10K here (81 PNG files)
+
+That's all you need!
+
+================================================================================
+DOWNLOAD NOW
+================================================================================
+
+👉 https://database.mmsp-kn.de/kadid-10k.html
+
+Once downloaded:
+1. Extract to training_data/kadid/
+2. Run: .\MASTER_SETUP_AND_RUN.ps1
+3. Done!
+
+================================================================================
+QUICK REFERENCE
+================================================================================
+
+KADID-10K Details:
+  - 81 reference images
+  - 10,000 distorted versions (computed on-the-fly during training)
+  - 5 distortion types per image reference
+  - Download: ~500 MB
+  - Extract: ~500 MB
+
+CSV: csv_files/moco_train.csv (81 entries)
+Folder: training_data/kadid/
+Script: .\MASTER_SETUP_AND_RUN.ps1
+
+================================================================================
