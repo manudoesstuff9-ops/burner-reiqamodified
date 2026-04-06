@@ -18,3 +18,6 @@ pip install -r requirements.txt && python main_contrast.py --batch_size 16 --epo
 
 
 pip install -r requirements.txt; python main_contrast.py --batch_size 16 --epochs 100 --data_folder . --csv_file csv_files/moco_train.csv
+
+
+.\.venv\Scripts\Activate.ps1; python main_contrast.py --batch_size 16 --epochs 100 --csv_path csv_files/moco_train.csv --num_workers 2
