@@ -30,17 +30,32 @@ def main():
     args.distributed = args.world_size > 1 or args.multiprocessing_distributed
     ngpus_per_node = torch.cuda.device_count()
 
-    if args.multiprocessing_distributed:
+    if ngpus_per_node == 1:
+        # Single GPU mode (Quadro RTX 4000)
+        main_worker(0, 1, args)
+    elif args.multiprocessing_distributed:
         args.world_size = ngpus_per_node * args.world_size
         mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
     else:
-        raise NotImplementedError('Currently only DDP training')
+        raise NotImplementedError('Set multiprocessing_distributed=True for multi-GPU')
 
 
 def main_worker(gpu, ngpus_per_node, args):
 
     trainer = ContrastTrainer(args)
-    trainer.init_ddp_environment(gpu, ngpus_per_node)
+    
+    # Only init DDP if multi-GPU
+    if ngpus_per_node > 1:
+        args.distributed = True
+        args.multiprocessing_distributed = True
+        trainer.init_ddp_environment(gpu, ngpus_per_node)
+    else:
+        # Single GPU mode
+        args.distributed = False
+        args.multiprocessing_distributed = False
+        torch.cuda.set_device(0)
+        args.gpu = 0
+        print("Use GPU: 0 for training (single GPU mode)")
 
     model, model_ema = build_model(args)
 
@@ -61,7 +76,12 @@ def main_worker(gpu, ngpus_per_node, args):
     else :
         optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
     
-    model, model_ema, optimizer = trainer.wrap_up(model, model_ema, optimizer)
+    # Skip DDP wrapping for single GPU
+    if ngpus_per_node == 1:
+        model.cuda()
+        model_ema.cuda()
+    else:
+        model, model_ema, optimizer = trainer.wrap_up(model, model_ema, optimizer)
 
     trainer.broadcast_memory(contrast)
 
@@ -70,7 +90,8 @@ def main_worker(gpu, ngpus_per_node, args):
     trainer.init_tensorboard_logger()
 
     for epoch in range(start_epoch, args.epochs + 1):
-        train_sampler.set_epoch(epoch)
+        if hasattr(train_sampler, 'set_epoch'):
+            train_sampler.set_epoch(epoch)
         trainer.adjust_learning_rate(optimizer, epoch)
 
         outs = trainer.train(epoch, train_loader, model, model_ema,
